@@ -264,22 +264,22 @@ if __name__ == '__main__':
     if 1:
         params = {
             'run_type': 'nms',
-            'iou_thr': 0.3,
+            'iou_thr': 0.5,
             'verbose': True,
         }
     if 1:
         params = {
             'run_type': 'soft-nms',
-            'iou_thr': 0.3,
+            'iou_thr': 0.5,
             'thresh': 0.0001,
-            'sigma': 0.5,
+            'sigma': 0.1,
             'verbose': True,
         }
     if 1:
         params = {
             'run_type': 'nmw',
             'skip_box_thr': 0.000000001,
-            'intersection_thr': 0.55,
+            'intersection_thr': 0.5,
             'limit_boxes': 30000,
             'verbose': True,
         }
@@ -287,7 +287,7 @@ if __name__ == '__main__':
         params = {
             'run_type': 'wbf',
             'skip_box_thr': 0.0000001,
-            'intersection_thr': 0.55,
+            'intersection_thr': 0.6,
             'conf_type': 'avg',
             'limit_boxes': 30000,
             'verbose': True,
