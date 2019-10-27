@@ -17,7 +17,7 @@ Coordinates for boxes expected to be normalized e.g in range [0; 1]. Order: x1, 
 #### NMS, Soft-NMS, NMW
 
 ```
-from ensemble_boxes_nms import *
+from ensemble_boxes import *
 # Ensemble for several models predictions
 boxes, scores, labels = nms_method(boxes_list, scores_list, labels_list, method=method, weights=weights, iou_thr=iou_thr, sigma=sigma, thresh=thresh)
 # Ensemble for single model predictions
@@ -27,7 +27,7 @@ boxes, scores, labels = nms_method([boxes_list], [scores_list], [labels_list], w
 #### WBF
 
 ```
-from ensemble_boxes_wbf import *
+from ensemble_boxes import *
 # Ensemble for several models predictions
 boxes, scores, labels = weighted_boxes_fusion(boxes_list, scores_list, labels_list, method=method, weights=weights, iou_thr=iou_thr, sigma=sigma, thresh=thresh)
 # Ensemble for single model predictions
@@ -65,4 +65,4 @@ Ensemble script for them is available here: [example_oid.py](./example_oid.py)
 
 ## Description of WBF method
 
-_Details later_
+_Details later (arxiv link)_

@@ -295,11 +295,11 @@ if __name__ == '__main__':
 
     annotations_path = 'test_data/challenge-2019-validation-detection-bbox-expand_3520.csv'
     pred_list = [
-        'test_data/0.46450_TF_IRV2_atrous_nms_iou_0.3_valid_3520.csv',
-        'test_data/0.52319_mmdet_ensemble_wbf_all_levels_models_2_thr_1e-08_iou_0.55_1_1_valid_3520.csv',
-        'test_data/0.52918_ensemble_wbf_v2_all_levels_csvbased_2_thr_1e-09_iou_0.55_type_avg_valid_3520.csv',
-        'test_data/0.53775_ensemble_wbf_v2_all_levels_csvbased_2_thr_1e-09_iou_0.55_type_avg_valid_3520.csv',
-        'test_data/0.51145_zfturbo_ensemble_by_labels_5_valid_0.01_3520.csv',
+        'test_data/0.46450_TF_IRV2_atrous_3520.csv',
+        'test_data/0.52319_mmdet_3520.csv',
+        'test_data/0.52918_tensorpack1_3520.csv',
+        'test_data/0.53775_tensorpack2_3520.csv',
+        'test_data/0.51145_retinanet_3520.csv',
     ]
     weights = [1, 1, 1, 1, 1]
 
