@@ -293,6 +293,7 @@ if __name__ == '__main__':
             'verbose': True,
         }
 
+    # Files available here: https://github.com/ZFTurbo/Weighted-Boxes-Fusion/releases/download/v1.0/test_data.zip
     annotations_path = 'test_data/challenge-2019-validation-detection-bbox-expand_3520.csv'
     pred_list = [
         'test_data/0.46450_TF_IRV2_atrous_3520.csv',

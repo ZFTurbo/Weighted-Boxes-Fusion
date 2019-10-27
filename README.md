@@ -60,7 +60,8 @@ Model scores at local validation:
 * Soft-NMS Time: ~80 seconds
 * WBF Time: ~167 seconds
 
-You can download predictions as well as ground truth from here: [test_data.zip]()
+You can download model predictions as well as ground truth labels from here: [test_data.zip](https://github.com/ZFTurbo/Weighted-Boxes-Fusion/releases/download/v1.0/test_data.zip)
+
 Ensemble script for them is available here: [example_oid.py](./example_oid.py)
 
 ## Description of WBF method
