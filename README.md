@@ -7,7 +7,6 @@ Repository contains Python implementation of several methods for ensembling boxe
 * Non-maximum weighted (NMW) [[2]](http://openaccess.thecvf.com/content_ICCV_2017_workshops/papers/w14/Zhou_CAD_Scale_Invariant_ICCV_2017_paper.pdf)
 * **Weighted boxes fusion (WBF)** [[3]]() - new method which gives better results comparing to others 
 
-
 ## Requirements
 
 Python 3.*, Numpy
@@ -63,7 +62,7 @@ boxes, scores, labels = weighted_boxes_fusion(boxes_list, scores_list, labels_li
 
 If you need to apply NMS or any other method to single model predictions you can call function like that:
 
-```
+```python
 from ensemble_boxes import *
 # Merge boxes for single model predictions
 boxes, scores, labels = weighted_boxes_fusion([boxes_list], [scores_list], [labels_list], weights=None, method=method, iou_thr=iou_thr, thresh=thresh)
