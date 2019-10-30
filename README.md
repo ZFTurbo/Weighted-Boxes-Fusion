@@ -5,7 +5,7 @@ Repository contains Python implementation of several methods for ensembling boxe
 * Non-maximum Suppression (NMS)
 * Soft-NMS [[1]](https://arxiv.org/abs/1704.04503)
 * Non-maximum weighted (NMW) [[2]](http://openaccess.thecvf.com/content_ICCV_2017_workshops/papers/w14/Zhou_CAD_Scale_Invariant_ICCV_2017_paper.pdf)
-* **Weighted boxes fusion (WBF)** [[3]]() - new method which gives better results comparing to others 
+* **Weighted boxes fusion (WBF)** [[3]](https://arxiv.org/abs/1910.13302) - new method which gives better results comparing to others 
 
 ## Requirements
 
@@ -94,4 +94,4 @@ Ensemble script for them is available here: [example_oid.py](./example_oid.py)
 
 ## Description of WBF method
 
-_Details later (arxiv link)_
+* https://arxiv.org/abs/1910.13302
