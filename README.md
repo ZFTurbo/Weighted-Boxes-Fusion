@@ -13,7 +13,7 @@ Python 3.*, Numpy
 
 # Installation
 
-`pip install ensemble_boxes`
+`pip install ensemble-boxes`
 
 ## Usage examples
 
