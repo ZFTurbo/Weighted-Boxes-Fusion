@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/217881799.svg)](https://zenodo.org/badge/latestdoi/217881799)
+
 ## Weighted boxes fusion
 
 Repository contains Python implementation of several methods for ensembling boxes from object detection models: 
