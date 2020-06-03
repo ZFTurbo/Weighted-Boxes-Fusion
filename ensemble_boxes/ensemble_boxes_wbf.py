@@ -30,17 +30,17 @@ def prefilter_boxes(boxes, scores, labels, weights, thr):
     new_boxes = dict()
     for t in range(len(boxes)):
         for j in range(len(boxes[t])):
-            label = int(labels[t][j])
             score = scores[t][j]
             if score < thr:
-                break
+                continue
+            label = int(labels[t][j])
             box_part = boxes[t][j]
             b = [int(label), float(score) * weights[t], float(box_part[0]), float(box_part[1]), float(box_part[2]), float(box_part[3])]
             if label not in new_boxes:
                 new_boxes[label] = []
             new_boxes[label].append(b)
 
-    # Sort each list in dict and transform it to numpy array
+    # Sort each list in dict by score and transform it to numpy array
     for k in new_boxes:
         current_boxes = np.array(new_boxes[k])
         new_boxes[k] = current_boxes[current_boxes[:, 1].argsort()[::-1]]
@@ -95,7 +95,7 @@ def weighted_boxes_fusion(boxes_list, scores_list, labels_list, weights=None, io
     :param scores_list: list of scores for each model 
     :param labels_list: list of labels for each model
     :param weights: list of weights for each model. Default: None, which means weight == 1 for each model
-    :param intersection_thr: IoU value for boxes to be a match
+    :param iou_thr: IoU value for boxes to be a match
     :param skip_box_thr: exclude boxes with score lower than this variable  
     :param conf_type: how to calculate confidence in weighted boxes. 'avg': average value, 'max': maximum value
     :param allows_overflow: false if we want confidence score not exceed 1.0 
