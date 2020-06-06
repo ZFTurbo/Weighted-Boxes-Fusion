@@ -4,6 +4,39 @@ __author__ = 'ZFTurbo: https://kaggle.com/zfturbo'
 import numpy as np
 
 
+def prepare_boxes(boxes, scores, labels):
+    result_boxes = boxes.copy()
+
+    cond = (result_boxes < 0)
+    cond_sum = cond.astype(np.int32).sum()
+    if cond_sum > 0:
+        print('Warning. Fixed {} boxes coordinates < 0'.format(cond_sum))
+        result_boxes[cond] = 0
+
+    cond = (result_boxes > 1)
+    cond_sum = cond.astype(np.int32).sum()
+    if cond_sum > 0:
+        print('Warning. Fixed {} boxes coordinates > 1. Check that your boxes was normalized at [0, 1]'.format(cond_sum))
+        result_boxes[cond] = 1
+
+    boxes1 = result_boxes.copy()
+    result_boxes[:, 0] = np.min(boxes1[:, [0, 2]], axis=1)
+    result_boxes[:, 2] = np.max(boxes1[:, [0, 2]], axis=1)
+    result_boxes[:, 1] = np.min(boxes1[:, [1, 3]], axis=1)
+    result_boxes[:, 3] = np.max(boxes1[:, [1, 3]], axis=1)
+
+    area = (result_boxes[:, 2] - result_boxes[:, 0]) * (result_boxes[:, 3] - result_boxes[:, 1])
+    cond = (area == 0)
+    cond_sum = cond.astype(np.int32).sum()
+    if cond_sum > 0:
+        print('Warning. Removed {} boxes with zero area!'.format(cond_sum))
+        result_boxes = result_boxes[area > 0]
+        scores = scores[area > 0]
+        labels = labels[area > 0]
+
+    return result_boxes, scores, labels
+
+
 def cpu_soft_nms_float(dets, sc, Nt, sigma, thresh, method):
     """
     Based on: https://github.com/DocF/Soft-NMS/blob/master/soft_nms.py
@@ -152,6 +185,9 @@ def nms_method(boxes, scores, labels, method=3, iou_thr=0.5, sigma=0.5, thresh=0
     boxes = np.concatenate(boxes)
     scores = np.concatenate(scores)
     labels = np.concatenate(labels)
+
+    # Fix coordinates and removed zero area boxes
+    boxes, scores, labels = prepare_boxes(boxes, scores, labels)
 
     # Run NMS independently for each label
     unique_labels = np.unique(labels)

@@ -7,6 +7,7 @@ CAD: Scale Invariant Framework for Real-Time Object Detection
 http://openaccess.thecvf.com/content_ICCV_2017_workshops/papers/w14/Zhou_CAD_Scale_Invariant_ICCV_2017_paper.pdf
 """
 
+import warnings
 import numpy as np
 
 
@@ -34,13 +35,64 @@ def prefilter_boxes(boxes, scores, labels, weights, thr):
     # Create dict with boxes stored by its label
     new_boxes = dict()
     for t in range(len(boxes)):
+
+        if len(boxes[t]) != len(scores[t]):
+            print('Error. Length of boxes arrays not equal to length of scores array: {} != {}'.format(len(boxes[t]),
+                                                                                                       len(scores[t])))
+            exit()
+
+        if len(boxes[t]) != len(labels[t]):
+            print('Error. Length of boxes arrays not equal to length of labels array: {} != {}'.format(len(boxes[t]),
+                                                                                                       len(labels[t])))
+            exit()
+
         for j in range(len(boxes[t])):
             score = scores[t][j]
             if score < thr:
                 continue
             label = int(labels[t][j])
             box_part = boxes[t][j]
-            b = [int(label), float(score) * weights[t], float(box_part[0]), float(box_part[1]), float(box_part[2]), float(box_part[3])]
+            x1 = float(box_part[0])
+            y1 = float(box_part[1])
+            x2 = float(box_part[2])
+            y2 = float(box_part[3])
+
+            # Box data checks
+            if x2 < x1:
+                warnings.warn('X2 < X1 value in box. Swap them.')
+                x1, x2 = x2, x1
+            if y2 < y1:
+                warnings.warn('Y2 < Y1 value in box. Swap them.')
+                y1, y2 = y2, y1
+            if x1 < 0:
+                warnings.warn('X1 < 0 in box. Set it to 0.')
+                x1 = 0
+            if x1 > 1:
+                warnings.warn('X1 > 1 in box. Set it to 1. Check that you normalize boxes in [0, 1] range.')
+                x1 = 1
+            if x2 < 0:
+                warnings.warn('X2 < 0 in box. Set it to 0.')
+                x2 = 0
+            if x2 > 1:
+                warnings.warn('X2 > 1 in box. Set it to 1. Check that you normalize boxes in [0, 1] range.')
+                x2 = 1
+            if y1 < 0:
+                warnings.warn('Y1 < 0 in box. Set it to 0.')
+                y1 = 0
+            if y1 > 1:
+                warnings.warn('Y1 > 1 in box. Set it to 1. Check that you normalize boxes in [0, 1] range.')
+                y1 = 1
+            if y2 < 0:
+                warnings.warn('Y2 < 0 in box. Set it to 0.')
+                y2 = 0
+            if y2 > 1:
+                warnings.warn('Y2 > 1 in box. Set it to 1. Check that you normalize boxes in [0, 1] range.')
+                y2 = 1
+            if (x2 - x1) * (y2 - y1) == 0.0:
+                warnings.warn("Zero area box skipped: {}.".format(box_part))
+                continue
+
+            b = [int(label), float(score) * weights[t], x1, y1, x2, y2]
             if label not in new_boxes:
                 new_boxes[label] = []
             new_boxes[label].append(b)
