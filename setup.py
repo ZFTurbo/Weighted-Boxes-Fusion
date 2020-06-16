@@ -5,7 +5,7 @@ except:
 
 setup(
     name='ensemble_boxes',
-    version='1.0.2',
+    version='1.0.3',
     author='Roman Solovyev (ZFTurbo)',
     packages=['ensemble_boxes', ],
     url='https://github.com/ZFTurbo/Weighted-Boxes-Fusion',
@@ -16,5 +16,6 @@ setup(
     install_requires=[
         "numpy",
         "pandas",
+        "numba",
     ],
 )

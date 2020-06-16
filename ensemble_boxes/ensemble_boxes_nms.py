@@ -2,6 +2,7 @@
 __author__ = 'ZFTurbo: https://kaggle.com/zfturbo'
 
 import numpy as np
+from numba import jit
 
 
 def prepare_boxes(boxes, scores, labels):
@@ -48,7 +49,7 @@ def cpu_soft_nms_float(dets, sc, Nt, sigma, thresh, method):
     :param sigma:  
     :param thresh: 
     :param method: 1 - linear soft-NMS, 2 - gaussian soft-NMS, 3 - standard NMS
-    :return:       index of boxes to keep
+    :return: index of boxes to keep
     """
 
     # indexes concatenate boxes with the last column
@@ -120,12 +121,13 @@ def cpu_soft_nms_float(dets, sc, Nt, sigma, thresh, method):
     return keep
 
 
+@jit(nopython=True)
 def nms_float_fast(dets, scores, thresh):
     """
     # It's different from original nms because we have float coordinates on range [0; 1]
     :param dets: numpy array of boxes with shape: (N, 5). Order: x1, y1, x2, y2, score. All variables in range [0; 1]
     :param thresh: IoU value for boxes
-    :return: 
+    :return: index of boxes to keep
     """
     x1 = dets[:, 0]
     y1 = dets[:, 1]

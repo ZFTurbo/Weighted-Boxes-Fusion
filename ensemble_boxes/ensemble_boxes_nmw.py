@@ -9,8 +9,10 @@ http://openaccess.thecvf.com/content_ICCV_2017_workshops/papers/w14/Zhou_CAD_Sca
 
 import warnings
 import numpy as np
+from numba import jit
 
 
+@jit(nopython=True)
 def bb_intersection_over_union(A, B):
     xA = max(A[0], B[0])
     yA = max(A[1], B[1])

@@ -314,8 +314,10 @@ if __name__ == '__main__':
         mean_ap, average_precisions = mean_average_precision_for_boxes(ann, det, verbose=False)
         print("File: {} mAP: {:.6f}".format(os.path.basename(pred_list[i]), mean_ap))
 
+    start_time = time.time()
     ensemble_preds = ensemble_predictions(pred_list, weights, params)
-    ensemble_preds.to_csv("test_data/debug.csv", index=False)
+    print("Overall ensemble time for method: {}: {:.2f} sec".format(params['run_type'], time.time() - start_time))
+    ensemble_preds.to_csv("test_data/debug_{}.csv".format(params['run_type']), index=False)
     ensemble_preds = ensemble_preds[['ImageId', 'LabelName', 'Conf', 'XMin', 'XMax', 'YMin', 'YMax']].values
     mean_ap, average_precisions = mean_average_precision_for_boxes(ann, ensemble_preds, verbose=True)
     print("Ensemble [{}] Weights: {} Params: {} mAP: {:.6f}".format(len(weights), weights, params, mean_ap))

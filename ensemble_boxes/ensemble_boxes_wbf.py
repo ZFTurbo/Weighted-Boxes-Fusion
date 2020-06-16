@@ -4,9 +4,11 @@ __author__ = 'ZFTurbo: https://kaggle.com/zfturbo'
 
 import warnings
 import numpy as np
+from numba import jit
 
 
-def bb_intersection_over_union(A, B):
+@jit(nopython=True)
+def bb_intersection_over_union(A, B) -> float:
     xA = max(A[0], B[0])
     yA = max(A[1], B[1])
     xB = min(A[2], B[2])
