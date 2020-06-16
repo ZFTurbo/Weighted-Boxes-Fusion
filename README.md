@@ -11,7 +11,7 @@ Repository contains Python implementation of several methods for ensembling boxe
 
 ## Requirements
 
-Python 3.*, Numpy
+Python 3.*, Numpy, Numba
 
 # Installation
 
