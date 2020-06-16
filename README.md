@@ -72,6 +72,10 @@ boxes, scores, labels = weighted_boxes_fusion([boxes_list], [scores_list], [labe
 
 More examples can be found in [example.py](./example.py)
 
+#### 3D version
+
+There is support for 3D boxes in WBF method with `weighted_boxes_fusion_3d` function. Check example of usage in [example_3d.py](./example_3d.py)
+
 ## Accuracy and speed comparison
 
 Comparison was made for ensemble of 5 different object detection models predictions trained on [Open Images Dataset](https://storage.googleapis.com/openimages/web/index.html) (500 classes).
