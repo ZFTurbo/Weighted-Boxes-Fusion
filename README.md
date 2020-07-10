@@ -70,11 +70,11 @@ from ensemble_boxes import *
 boxes, scores, labels = weighted_boxes_fusion([boxes_list], [scores_list], [labels_list], weights=None, method=method, iou_thr=iou_thr, thresh=thresh)
 ```
 
-More examples can be found in [example.py](./example.py)
+More examples can be found in [example.py](examples/example.py)
 
 #### 3D version
 
-There is support for 3D boxes in WBF method with `weighted_boxes_fusion_3d` function. Check example of usage in [example_3d.py](./example_3d.py)
+There is support for 3D boxes in WBF method with `weighted_boxes_fusion_3d` function. Check example of usage in [example_3d.py](examples/example_3d.py)
 
 ## Accuracy and speed comparison
 
@@ -96,7 +96,7 @@ Model scores at local validation:
 
 You can download model predictions as well as ground truth labels from here: [test_data.zip](https://github.com/ZFTurbo/Weighted-Boxes-Fusion/releases/download/v1.0/test_data.zip)
 
-Ensemble script for them is available here: [example_oid.py](./example_oid.py)
+Ensemble script for them is available here: [example_oid.py](examples/example_oid.py)
 
 ## Description of WBF method
 
