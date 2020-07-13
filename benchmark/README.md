@@ -19,7 +19,7 @@ Here you can find predictions for COCO validation from different freely availabl
 
 ### Benchmark files
 
-[Download ~240 MB]()
+[Download ~287 MB](https://github.com/ZFTurbo/Weighted-Boxes-Fusion/releases/download/v1.0.5/benchmark.zip)
 
 ## Ensemble results
 
