@@ -335,8 +335,9 @@ if __name__ == '__main__':
         in_dir + 'DetRS-mirror-valid.csv',
         in_dir + 'DetRS_resnet50-valid.csv',
         in_dir + 'DetRS_resnet50-mirror-valid.csv',
+        in_dir + 'yolov5x_tta.csv',
     ]
-    weights = [0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 5, 5, 7, 7, 9, 9, 8, 8, 5, 5]
+    weights = [0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 5, 5, 7, 7, 9, 9, 8, 8, 5, 5, 10]
     assert(len(benchmark_csv) == len(weights))
     ensemble(benchmark_csv, weights, params, True)
 
