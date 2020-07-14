@@ -27,7 +27,7 @@ Here you can find predictions for COCO validation from different freely availabl
 
 There is python code to get high score on COCO validation using WBF method: [run_benchmark.py](run_benchmark.py)
 
-WBF with weights: [0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 5, 5, 7, 7, 9, 9, 8, 8, 5, 5, 10] and IoU = 0.7 gives **56.1** on COCO validation.
+WBF with weights: [0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 5, 5, 7, 7, 9, 9, 8, 8, 5, 5, 10] and IoU = 0.7 gives **56.1** on COCO validation and **56.4** on COCO test-dev.
 
 ``` 
  Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.561
