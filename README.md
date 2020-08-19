@@ -98,6 +98,17 @@ You can download model predictions as well as ground truth labels from here: [te
 
 Ensemble script for them is available here: [example_oid.py](examples/example_oid.py)
 
-## Description of WBF method
+## Description of WBF method and citation
 
-* https://arxiv.org/abs/1910.13302
+* https://arxiv.org/abs/1910.13302 (updated: 2020.08)
+
+If you find this code useful please cite:
+
+```
+@article{wbf2019,
+  title={Weighted Boxes Fusion: ensembling boxes for object detection models},
+  author={Solovyev, Roman and Wang, Weimin and Gabruseva, Tatiana},
+  journal={arXiv preprint arXiv:1910.13302},
+  year={2019}
+}
+```
