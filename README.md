@@ -101,3 +101,15 @@ Ensemble script for them is available here: [example_oid.py](examples/example_oi
 ## Description of WBF method
 
 * https://arxiv.org/abs/1910.13302
+
+## Citation
+
+If you are using the code of this work, please cite it as
+
+@InProceedings{WBF2020,
+  author = {Solovyev, Roman and Wang, Weimin and Gabruseva, Tatiana},
+  title = {Weighted Boxes Fusion: combining boxes for object detection models},
+  booktitle = {https://arxiv.org/abs/1910.13302},
+  month = {August},
+  year = {2020}
+}
