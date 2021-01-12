@@ -98,6 +98,8 @@ You can download model predictions as well as ground truth labels from here: [te
 
 Ensemble script for them is available here: [example_oid.py](examples/example_oid.py)
 
+We also published large benchmark based on COCO dataset [here](benchmark/).
+
 ## Description of WBF method and citation
 
 * https://arxiv.org/abs/1910.13302 (updated: 2020.08)
