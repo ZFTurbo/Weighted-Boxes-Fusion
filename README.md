@@ -103,14 +103,17 @@ We also published large benchmark based on COCO dataset [here](benchmark/).
 ## Description of WBF method and citation
 
 * https://arxiv.org/abs/1910.13302 (updated: 2020.08)
+* https://authors.elsevier.com/c/1ca0dxnVK3cWY 
 
 If you find this code useful please cite:
 
 ```
-@article{wbf2019,
-  title={Weighted Boxes Fusion: ensembling boxes for object detection models},
+@article{solovyev2021weighted,
+  title={Weighted boxes fusion: Ensembling boxes from different object detection models},
   author={Solovyev, Roman and Wang, Weimin and Gabruseva, Tatiana},
-  journal={arXiv preprint arXiv:1910.13302},
-  year={2019}
+  journal={Image and Vision Computing},
+  pages={1-6},
+  year={2021},
+  publisher={Elsevier}
 }
 ```
