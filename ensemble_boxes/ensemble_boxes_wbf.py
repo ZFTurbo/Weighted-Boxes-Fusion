@@ -88,7 +88,7 @@ def prefilter_boxes(boxes, scores, labels, weights, thr):
                 warnings.warn("Zero area box skipped: {}.".format(box_part))
                 continue
 
-            b = [int(label), float(score) * weights[t], x1, y1, x2, y2]
+            b = [int(label), float(score) * weights[t], weights[t], x1, y1, x2, y2]
             if label not in new_boxes:
                 new_boxes[label] = []
             new_boxes[label].append(b)
@@ -109,19 +109,24 @@ def get_weighted_box(boxes, conf_type='avg'):
     :return: weighted box
     """
 
-    box = np.zeros(6, dtype=np.float32)
+    box = np.zeros(7, dtype=np.float32)
     conf = 0
     conf_list = []
+    w = 0
     for b in boxes:
-        box[2:] += (b[1] * b[2:])
+        box[3:] += (b[1] * b[3:])
         conf += b[1]
         conf_list.append(b[1])
+        w += b[2]
     box[0] = boxes[0][0]
     if conf_type == 'avg':
         box[1] = conf / len(boxes)
     elif conf_type == 'max':
         box[1] = np.array(conf_list).max()
-    box[2:] /= conf
+    elif conf_type == 'weighted_avg':
+        box[1] = conf / len(boxes)
+    box[2] = w
+    box[3:] /= conf
     return box
 
 
@@ -132,7 +137,7 @@ def find_matching_box(boxes_list, new_box, match_iou):
         box = boxes_list[i]
         if box[0] != new_box[0]:
             continue
-        iou = bb_intersection_over_union(box[2:], new_box[2:])
+        iou = bb_intersection_over_union(box[3:], new_box[3:])
         if iou > best_iou:
             best_index = i
             best_iou = iou
@@ -165,8 +170,8 @@ def weighted_boxes_fusion(boxes_list, scores_list, labels_list, weights=None, io
         weights = np.ones(len(boxes_list))
     weights = np.array(weights)
 
-    if conf_type not in ['avg', 'max']:
-        print('Unknown conf_type: {}. Must be "avg" or "max"'.format(conf_type))
+    if conf_type not in ['avg', 'max', 'weighted_avg']:
+        print('Unknown conf_type: {}. Must be "avg", "max" or "weighted_avg"'.format(conf_type))
         exit()
 
     filtered_boxes = prefilter_boxes(boxes_list, scores_list, labels_list, weights, skip_box_thr)
@@ -191,7 +196,9 @@ def weighted_boxes_fusion(boxes_list, scores_list, labels_list, weights=None, io
 
         # Rescale confidence based on number of models and boxes
         for i in range(len(new_boxes)):
-            if not allows_overflow:
+            if conf_type == 'weighted_avg':
+                weighted_boxes[i][1] = weighted_boxes[i][1] * len(new_boxes[i]) / weighted_boxes[i][2]
+            elif not allows_overflow:
                 weighted_boxes[i][1] = weighted_boxes[i][1] * min(weights.sum(), len(new_boxes[i])) / weights.sum()
             else:
                 weighted_boxes[i][1] = weighted_boxes[i][1] * len(new_boxes[i]) / weights.sum()
@@ -199,7 +206,7 @@ def weighted_boxes_fusion(boxes_list, scores_list, labels_list, weights=None, io
 
     overall_boxes = np.concatenate(overall_boxes, axis=0)
     overall_boxes = overall_boxes[overall_boxes[:, 1].argsort()[::-1]]
-    boxes = overall_boxes[:, 2:]
+    boxes = overall_boxes[:, 3:]
     scores = overall_boxes[:, 1]
     labels = overall_boxes[:, 0]
     return boxes, scores, labels
