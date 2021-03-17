@@ -33,7 +33,6 @@ class TestWBF(unittest.TestCase):
             conf_type='weighted_avg'
         )
 
-        print(type(boxes))
         ## test for bbox
 
         # bbox with score = 0.95 (no overlap)
