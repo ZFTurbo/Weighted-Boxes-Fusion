@@ -4,21 +4,23 @@ from ensemble_boxes import *
 
 
 class TestWBF(unittest.TestCase):
-    def test_weighted_avg(self):
+    def test_box_and_model_avg(self):
         boxes_list = [
             [
-                [0.1, 0.1, 0.5, 0.5],
-                [0.2, 0.2, 0.5, 0.5],
-                [0.45, 0.45, 0.5, 0.5],
+                [0.10, 0.10, 0.50, 0.50], # cluster 2
+                [0.11, 0.11, 0.51, 0.51], # cluster 2
+                [0.60, 0.60, 0.80, 0.80], # cluster 1
+
             ],
             [
-                [0.3, 0.3, 0.6, 0.6],
-                [0.8, 0.8, 0.9, 0.9],
+                [0.59, 0.59, 0.79, 0.79], # cluster 1
+                [0.61, 0.61, 0.81, 0.81], # cluster 1
+                [0.80, 0.80, 0.90, 0.90], # cluster 3
             ],
         ]
 
-        scores_list = [[0.9, 0.7, 0.2], [0.5, 0.95]]
-        labels_list = [[1, 1, 1], [1, 0]]
+        scores_list = [[0.9, 0.8, 0.7], [0.85, 0.75, 0.65]]
+        labels_list = [[1, 1, 1], [1, 1, 0]]
         weights = [2, 1]
         iou_thr = 0.5
         skip_box_thr = 0.0001
@@ -30,42 +32,218 @@ class TestWBF(unittest.TestCase):
             weights=weights,
             iou_thr=iou_thr,
             skip_box_thr=skip_box_thr,
-            conf_type='weighted_avg'
+            conf_type='box_and_model_avg'
         )
+
+        print("box_and_model_avg")
+        print(boxes)
+        print(scores)
 
         ## test for bbox
 
-        # bbox with score = 0.95 (no overlap)
-        np.testing.assert_allclose(boxes[0], [0.8, 0.8, 0.9, 0.9])
+        # cluster 1
+        np.testing.assert_allclose(boxes[0][0],
+                                   (0.60 * 0.7 * 2 + 0.59 * 0.85 * 1 + 0.61 * 0.75 * 1) / (0.7 * 2 + 0.85 * 1 + 0.75 * 1))
+        np.testing.assert_allclose(boxes[0][1],
+                                   (0.60 * 0.7 * 2 + 0.59 * 0.85 * 1 + 0.61 * 0.75 * 1) / (0.7 * 2 + 0.85 * 1 + 0.75 * 1))
+        np.testing.assert_allclose(boxes[0][2],
+                                   (0.80 * 0.7 * 2 + 0.79 * 0.85 * 1 + 0.81 * 0.75 * 1) / (0.7 * 2 + 0.85 * 1 + 0.75 * 1))
+        np.testing.assert_allclose(boxes[0][3],
+                                   (0.80 * 0.7 * 2 + 0.79 * 0.85 * 1 + 0.81 * 0.75 * 1) / (0.7 * 2 + 0.85 * 1 + 0.75 * 1))
 
-        # bbox with score = 0.9 and 0.7 (overlapped)
-        # x1 (or y1) = (0.9 * 0.1 + 0.7 * 0.2) / (0.9 + 0.7) = 0.14375
-        # x2 (or y2) = (0.9 * 0.5 + 0.7 * 0.5) / (0.9 + 0.7) = 0.5
-        np.testing.assert_allclose(boxes[1], [0.14375, 0.14375, 0.5, 0.5])
+        # cluster 2
+        np.testing.assert_allclose(boxes[1][0], (0.1 * 0.9 * 2 + 0.11 * 0.8 * 2) / (0.9 * 2 + 0.8 * 2))
+        np.testing.assert_allclose(boxes[1][1], (0.1 * 0.9 * 2 + 0.11 * 0.8 * 2) / (0.9 * 2 + 0.8 * 2))
+        np.testing.assert_allclose(boxes[1][2], (0.5 * 0.9 * 2 + 0.51 * 0.8 * 2) / (0.9 * 2 + 0.8 * 2))
+        np.testing.assert_allclose(boxes[1][3], (0.5 * 0.9 * 2 + 0.51 * 0.8 * 2) / (0.9 * 2 + 0.8 * 2))
 
-        # bbox with score = 0.5 (no overlap)
-        np.testing.assert_allclose(boxes[2], [0.3, 0.3, 0.6, 0.6])
-
-        # bbox with score = 0.2 (no overlap)
-        np.testing.assert_allclose(boxes[3], [0.45, 0.45, 0.5, 0.5])
+        # cluster 3
+        np.testing.assert_allclose(boxes[2][0], (0.8 * 0.65 * 1) / (0.65 * 1))
+        np.testing.assert_allclose(boxes[2][1], (0.8 * 0.65 * 1) / (0.65 * 1))
+        np.testing.assert_allclose(boxes[2][2], (0.9 * 0.65 * 1) / (0.65 * 1))
+        np.testing.assert_allclose(boxes[2][3], (0.9 * 0.65 * 1) / (0.65 * 1))
 
         ## test for scores
 
-        # no overlap
-        np.testing.assert_allclose(scores[0], 0.95)
+        # cluster 11c`
+        box_avg = (0.7 * 2 + 0.85 * 1 + 0.75 * 1) / (2 + 1 + 1)
+        model_avg =(2 + 1) / (2 + 1)
+        np.testing.assert_allclose(scores[0],  box_avg * model_avg)
 
-        # overlap 0.9 and 0.7
-        # (2 * 0.9 + 2 * 0.7) / (2 + 2) = 0.8
-        np.testing.assert_allclose(scores[1], 0.8)
+        # cluster 2
+        box_avg = (0.9 * 2 + 0.8 * 2) / (2 + 2)
+        model_avg = 2 / (2 + 1)
+        np.testing.assert_allclose(scores[1],  box_avg * model_avg)
 
-        # no overlap
-        np.testing.assert_allclose(scores[2], 0.5)
-
-        # no overlap
-        np.testing.assert_allclose(scores[3], 0.2)
+        # cluster 3
+        box_avg = 0.65 * 1 / 1
+        model_avg = 1 / (2 + 1)
+        np.testing.assert_allclose(scores[2],  box_avg * model_avg)
 
         ## test for labels
-        np.testing.assert_array_equal(labels, [0, 1, 1, 1])
+        np.testing.assert_array_equal(labels, [1, 1, 0])
+
+    def test_absent_model_aware_avg(self):
+        boxes_list = [
+            [
+                [0.10, 0.10, 0.50, 0.50], # cluster 2
+                [0.11, 0.11, 0.51, 0.51], # cluster 2
+                [0.60, 0.60, 0.80, 0.80], # cluster 1
+
+            ],
+            [
+                [0.59, 0.59, 0.79, 0.79], # cluster 1
+                [0.61, 0.61, 0.81, 0.81], # cluster 1
+                [0.80, 0.80, 0.90, 0.90], # cluster 3
+            ],
+        ]
+
+        scores_list = [[0.9, 0.8, 0.7], [0.85, 0.75, 0.65]]
+        labels_list = [[1, 1, 1], [1, 1, 0]]
+        weights = [2, 1]
+        iou_thr = 0.5
+        skip_box_thr = 0.0001
+
+        boxes, scores, labels = weighted_boxes_fusion(
+            boxes_list,
+            scores_list,
+            labels_list,
+            weights=weights,
+            iou_thr=iou_thr,
+            skip_box_thr=skip_box_thr,
+            conf_type='absent_model_aware_avg'
+        )
+        print("absent_model_aware_avg")
+        print(boxes)
+        print(scores)
+
+        ## test for bbox
+
+        # cluster 1
+        np.testing.assert_allclose(boxes[0][0],
+                                   (0.60 * 0.7 * 2 + 0.59 * 0.85 * 1 + 0.61 * 0.75 * 1) / (0.7 * 2 + 0.85 * 1 + 0.75 * 1))
+        np.testing.assert_allclose(boxes[0][1],
+                                   (0.60 * 0.7 * 2 + 0.59 * 0.85 * 1 + 0.61 * 0.75 * 1) / (0.7 * 2 + 0.85 * 1 + 0.75 * 1))
+        np.testing.assert_allclose(boxes[0][2],
+                                   (0.80 * 0.7 * 2 + 0.79 * 0.85 * 1 + 0.81 * 0.75 * 1) / (0.7 * 2 + 0.85 * 1 + 0.75 * 1))
+        np.testing.assert_allclose(boxes[0][3],
+                                   (0.80 * 0.7 * 2 + 0.79 * 0.85 * 1 + 0.81 * 0.75 * 1) / (0.7 * 2 + 0.85 * 1 + 0.75 * 1))
+
+        # cluster 2
+        np.testing.assert_allclose(boxes[1][0], (0.1 * 0.9 * 2 + 0.11 * 0.8 * 2) / (0.9 * 2 + 0.8 * 2))
+        np.testing.assert_allclose(boxes[1][1], (0.1 * 0.9 * 2 + 0.11 * 0.8 * 2) / (0.9 * 2 + 0.8 * 2))
+        np.testing.assert_allclose(boxes[1][2], (0.5 * 0.9 * 2 + 0.51 * 0.8 * 2) / (0.9 * 2 + 0.8 * 2))
+        np.testing.assert_allclose(boxes[1][3], (0.5 * 0.9 * 2 + 0.51 * 0.8 * 2) / (0.9 * 2 + 0.8 * 2))
+
+        # cluster 3
+        np.testing.assert_allclose(boxes[2][0], (0.8 * 0.65 * 1) / (0.65 * 1))
+        np.testing.assert_allclose(boxes[2][1], (0.8 * 0.65 * 1) / (0.65 * 1))
+        np.testing.assert_allclose(boxes[2][2], (0.9 * 0.65 * 1) / (0.65 * 1))
+        np.testing.assert_allclose(boxes[2][3], (0.9 * 0.65 * 1) / (0.65 * 1))
+
+        ## test for scores
+
+        # cluster 1
+        absent_weights = 0
+        avg = (0.7 * 2 + 0.85 * 1 + 0.75 * 1) / (2 + 1 + 1 + absent_weights)
+        np.testing.assert_allclose(scores[0],  avg)
+
+        # cluster 2
+        absent_weights = 1
+        avg = (0.9 * 2 + 0.8 * 2) / (2 + 2 + absent_weights)
+        np.testing.assert_allclose(scores[1],  avg)
+
+        # cluster 3
+        absent_weights = 2
+        avg = 0.65 * 1 / (1 + absent_weights)
+        np.testing.assert_allclose(scores[2], avg)
+
+        ## test for labels
+        np.testing.assert_array_equal(labels, [1, 1, 0])
+
+
+    def test_avg(self):
+        boxes_list = [
+            [
+                [0.10, 0.10, 0.50, 0.50], # cluster 2
+                [0.11, 0.11, 0.51, 0.51], # cluster 2
+                [0.60, 0.60, 0.80, 0.80], # cluster 1
+
+            ],
+            [
+                [0.59, 0.59, 0.79, 0.79], # cluster 1
+                [0.61, 0.61, 0.81, 0.81], # cluster 1
+                [0.80, 0.80, 0.90, 0.90], # cluster 3
+            ],
+        ]
+
+        scores_list = [[0.9, 0.8, 0.7], [0.85, 0.75, 0.65]]
+        labels_list = [[1, 1, 1], [1, 1, 0]]
+        weights = [2, 1]
+        iou_thr = 0.5
+        skip_box_thr = 0.0001
+
+        boxes, scores, labels = weighted_boxes_fusion(
+            boxes_list,
+            scores_list,
+            labels_list,
+            weights=weights,
+            iou_thr=iou_thr,
+            skip_box_thr=skip_box_thr,
+            conf_type='avg'
+        )
+
+        print("avg")
+        print(boxes)
+        print(scores)
+
+        ## test for bbox
+
+        # cluster 2
+        np.testing.assert_allclose(boxes[0][0], (0.1 * 0.9 * 2 + 0.11 * 0.8 * 2) / (0.9 * 2 + 0.8 * 2))
+        np.testing.assert_allclose(boxes[0][1], (0.1 * 0.9 * 2 + 0.11 * 0.8 * 2) / (0.9 * 2 + 0.8 * 2))
+        np.testing.assert_allclose(boxes[0][2], (0.5 * 0.9 * 2 + 0.51 * 0.8 * 2) / (0.9 * 2 + 0.8 * 2))
+        np.testing.assert_allclose(boxes[0][3], (0.5 * 0.9 * 2 + 0.51 * 0.8 * 2) / (0.9 * 2 + 0.8 * 2))
+
+        # cluster 1
+        np.testing.assert_allclose(boxes[1][0],
+                                   (0.60 * 0.7 * 2 + 0.59 * 0.85 * 1 + 0.61 * 0.75 * 1) / (0.7 * 2 + 0.85 * 1 + 0.75 * 1))
+        np.testing.assert_allclose(boxes[1][1],
+                                   (0.60 * 0.7 * 2 + 0.59 * 0.85 * 1 + 0.61 * 0.75 * 1) / (0.7 * 2 + 0.85 * 1 + 0.75 * 1))
+        np.testing.assert_allclose(boxes[1][2],
+                                   (0.80 * 0.7 * 2 + 0.79 * 0.85 * 1 + 0.81 * 0.75 * 1) / (0.7 * 2 + 0.85 * 1 + 0.75 * 1))
+        np.testing.assert_allclose(boxes[1][3],
+                                   (0.80 * 0.7 * 2 + 0.79 * 0.85 * 1 + 0.81 * 0.75 * 1) / (0.7 * 2 + 0.85 * 1 + 0.75 * 1))
+
+        # cluster 3
+        np.testing.assert_allclose(boxes[2][0], (0.8 * 0.65 * 1) / (0.65 * 1))
+        np.testing.assert_allclose(boxes[2][1], (0.8 * 0.65 * 1) / (0.65 * 1))
+        np.testing.assert_allclose(boxes[2][2], (0.9 * 0.65 * 1) / (0.65 * 1))
+        np.testing.assert_allclose(boxes[2][3], (0.9 * 0.65 * 1) / (0.65 * 1))
+
+        ## test for scores
+
+        # cluster 2
+        n_box = 2
+        avg = (0.9 * 2 + 0.8 * 2) / n_box
+        rescaled_avg = avg * min(2 + 1, n_box) / (2 + 1)
+        np.testing.assert_allclose(scores[0],  rescaled_avg)
+
+        # cluster 1
+        n_box = 3
+        avg = (0.7 * 2 + 0.85 * 1 + 0.75 * 1) / n_box
+        rescaled_avg = avg * min(2 + 1, n_box) / (2 + 1)
+        np.testing.assert_allclose(scores[1],  rescaled_avg)
+
+        # cluster 3
+        n_box = 1
+        avg = 0.65 * 1 / n_box
+        rescaled_avg = avg * min(2 + 1, n_box) / (2 + 1)
+        np.testing.assert_allclose(scores[2], rescaled_avg)
+
+        ## test for labels
+        np.testing.assert_array_equal(labels, [1, 1, 0])
+
 
 if __name__ == "__main__":
     unittest.main()

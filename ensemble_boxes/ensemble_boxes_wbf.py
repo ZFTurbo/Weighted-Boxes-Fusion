@@ -88,7 +88,8 @@ def prefilter_boxes(boxes, scores, labels, weights, thr):
                 warnings.warn("Zero area box skipped: {}.".format(box_part))
                 continue
 
-            b = [int(label), float(score) * weights[t], weights[t], x1, y1, x2, y2]
+            # [label, score, weight, model index, x1, y1, x2, y2]
+            b = [int(label), float(score) * weights[t], weights[t], t, x1, y1, x2, y2]
             if label not in new_boxes:
                 new_boxes[label] = []
             new_boxes[label].append(b)
@@ -106,15 +107,15 @@ def get_weighted_box(boxes, conf_type='avg'):
     Create weighted box for set of boxes
     :param boxes: set of boxes to fuse
     :param conf_type: type of confidence one of 'avg' or 'max'
-    :return: weighted box
+    :return: weighted box (label, score, weight, x1, y1, x2, y2)
     """
 
-    box = np.zeros(7, dtype=np.float32)
+    box = np.zeros(8, dtype=np.float32)
     conf = 0
     conf_list = []
     w = 0
     for b in boxes:
-        box[3:] += (b[1] * b[3:])
+        box[4:] += (b[1] * b[4:])
         conf += b[1]
         conf_list.append(b[1])
         w += b[2]
@@ -123,10 +124,11 @@ def get_weighted_box(boxes, conf_type='avg'):
         box[1] = conf / len(boxes)
     elif conf_type == 'max':
         box[1] = np.array(conf_list).max()
-    elif conf_type == 'weighted_avg':
+    elif conf_type in ['box_and_model_avg', 'absent_model_aware_avg']:
         box[1] = conf / len(boxes)
     box[2] = w
-    box[3:] /= conf
+    box[3] = -1 # model index field is retained for consistensy but is not used.
+    box[4:] /= conf
     return box
 
 
@@ -137,7 +139,7 @@ def find_matching_box(boxes_list, new_box, match_iou):
         box = boxes_list[i]
         if box[0] != new_box[0]:
             continue
-        iou = bb_intersection_over_union(box[3:], new_box[3:])
+        iou = bb_intersection_over_union(box[4:], new_box[4:])
         if iou > best_iou:
             best_index = i
             best_iou = iou
@@ -155,7 +157,7 @@ def weighted_boxes_fusion(boxes_list, scores_list, labels_list, weights=None, io
     :param weights: list of weights for each model. Default: None, which means weight == 1 for each model
     :param iou_thr: IoU value for boxes to be a match
     :param skip_box_thr: exclude boxes with score lower than this variable
-    :param conf_type: how to calculate confidence in weighted boxes. 'avg': average value, 'max': maximum value
+    :param conf_type: how to calculate confidence in weighted boxes. 'avg': average value, 'max': maximum value, 'box_and_model_avg': box and model wise hybrid weighted average, 'absent_model_aware_avg': weighted average that takes into account the absent model.
     :param allows_overflow: false if we want confidence score not exceed 1.0
 
     :return: boxes: boxes coordinates (Order of boxes: x1, y1, x2, y2).
@@ -170,8 +172,8 @@ def weighted_boxes_fusion(boxes_list, scores_list, labels_list, weights=None, io
         weights = np.ones(len(boxes_list))
     weights = np.array(weights)
 
-    if conf_type not in ['avg', 'max', 'weighted_avg']:
-        print('Unknown conf_type: {}. Must be "avg", "max" or "weighted_avg"'.format(conf_type))
+    if conf_type not in ['avg', 'max', 'box_and_model_avg', 'absent_model_aware_avg']:
+        print('Unknown conf_type: {}. Must be "avg", "max" or "box_and_model_avg", or "absent_model_aware_avg"'.format(conf_type))
         exit()
 
     filtered_boxes = prefilter_boxes(boxes_list, scores_list, labels_list, weights, skip_box_thr)
@@ -183,7 +185,6 @@ def weighted_boxes_fusion(boxes_list, scores_list, labels_list, weights=None, io
         boxes = filtered_boxes[label]
         new_boxes = []
         weighted_boxes = []
-
         # Clusterize boxes
         for j in range(0, len(boxes)):
             index, best_iou = find_matching_box(weighted_boxes, boxes[j], iou_thr)
@@ -193,20 +194,33 @@ def weighted_boxes_fusion(boxes_list, scores_list, labels_list, weights=None, io
             else:
                 new_boxes.append([boxes[j].copy()])
                 weighted_boxes.append(boxes[j].copy())
-
         # Rescale confidence based on number of models and boxes
         for i in range(len(new_boxes)):
-            if conf_type == 'weighted_avg':
-                weighted_boxes[i][1] = weighted_boxes[i][1] * len(new_boxes[i]) / weighted_boxes[i][2]
-            elif not allows_overflow:
-                weighted_boxes[i][1] = weighted_boxes[i][1] * min(weights.sum(), len(new_boxes[i])) / weights.sum()
-            else:
-                weighted_boxes[i][1] = weighted_boxes[i][1] * len(new_boxes[i]) / weights.sum()
-        overall_boxes.append(np.array(weighted_boxes))
+            clustered_boxes = np.array(new_boxes[i])
+            if conf_type == 'box_and_model_avg':
+                # weighted average for boxes
+                weighted_boxes[i][1] = weighted_boxes[i][1] * len(clustered_boxes) / weighted_boxes[i][2]
+                # identify unique model index by model index column
+                _, idx = np.unique(clustered_boxes[:, 3], return_index=True)
+                # rescale by unique model weights
+                weighted_boxes[i][1] = weighted_boxes[i][1] *  clustered_boxes[idx, 2].sum() / weights.sum()
 
+            elif conf_type == 'absent_model_aware_avg':
+                # get unique model index in the cluster
+                models = np.unique(clustered_boxes[:, 3]).astype(int)
+                # create a mask to get unused model weights
+                mask = np.ones(len(weights), dtype=bool)
+                mask[models] = False
+                # absent model aware weighted average
+                weighted_boxes[i][1] = weighted_boxes[i][1] * len(clustered_boxes) / (weighted_boxes[i][2] + weights[mask].sum())
+            elif not allows_overflow:
+                weighted_boxes[i][1] = weighted_boxes[i][1] * min(weights.sum(), len(clustered_boxes)) / weights.sum()
+            else:
+                weighted_boxes[i][1] = weighted_boxes[i][1] * len(clustered_boxes) / weights.sum()
+        overall_boxes.append(np.array(weighted_boxes))
     overall_boxes = np.concatenate(overall_boxes, axis=0)
     overall_boxes = overall_boxes[overall_boxes[:, 1].argsort()[::-1]]
-    boxes = overall_boxes[:, 3:]
+    boxes = overall_boxes[:, 4:]
     scores = overall_boxes[:, 1]
     labels = overall_boxes[:, 0]
     return boxes, scores, labels
