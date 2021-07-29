@@ -60,6 +60,7 @@ def prefilter_boxes(boxes, scores, labels, weights, thr):
             if y2 < y1:
                 warnings.warn('Y2 < Y1 value in box. Swap them.')
                 y1, y2 = y2, y1
+            '''
             if x1 < 0:
                 warnings.warn('X1 < 0 in box. Set it to 0.')
                 x1 = 0
@@ -84,6 +85,7 @@ def prefilter_boxes(boxes, scores, labels, weights, thr):
             if y2 > 1:
                 warnings.warn('Y2 > 1 in box. Set it to 1. Check that you normalize boxes in [0, 1] range.')
                 y2 = 1
+            '''
             if (x2 - x1) * (y2 - y1) == 0.0:
                 warnings.warn("Zero area box skipped: {}.".format(box_part))
                 continue
@@ -129,7 +131,14 @@ def get_weighted_box(boxes, conf_type='avg'):
     box[2] = w
     box[3] = -1 # model index field is retained for consistensy but is not used.
     box[4:] /= conf
-    return box
+    if (box[6] - box[4]) * (box[7] - box[5]) == 0.0:
+        idx = conf_list.index(max(conf_list))
+        boxes = np.array(boxes)
+        final =  boxes[idx, :]
+    else:           
+        final = box
+    
+    return final
 
 
 def find_matching_box(boxes_list, new_box, match_iou):
