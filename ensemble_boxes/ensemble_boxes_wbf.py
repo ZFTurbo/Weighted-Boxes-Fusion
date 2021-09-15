@@ -214,7 +214,7 @@ def weighted_boxes_fusion(boxes_list, scores_list, labels_list, weights=None, io
                 # absent model aware weighted average
                 weighted_boxes[i][1] = weighted_boxes[i][1] * len(clustered_boxes) / (weighted_boxes[i][2] + weights[mask].sum())
             elif not allows_overflow:
-                weighted_boxes[i][1] = weighted_boxes[i][1] * min(weights.sum(), len(clustered_boxes)) / weights.sum()
+                weighted_boxes[i][1] = weighted_boxes[i][1] * min(len(weights), len(clustered_boxes)) / weights.sum()
             else:
                 weighted_boxes[i][1] = weighted_boxes[i][1] * len(clustered_boxes) / weights.sum()
         overall_boxes.append(np.array(weighted_boxes))
