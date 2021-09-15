@@ -67,7 +67,7 @@ class TestWBF(unittest.TestCase):
 
         # cluster 11c`
         box_avg = (0.7 * 2 + 0.85 * 1 + 0.75 * 1) / (2 + 1 + 1)
-        model_avg =(2 + 1) / (2 + 1)
+        model_avg = (2 + 1) / (2 + 1)
         np.testing.assert_allclose(scores[0],  box_avg * model_avg)
 
         # cluster 2
@@ -190,7 +190,8 @@ class TestWBF(unittest.TestCase):
             weights=weights,
             iou_thr=iou_thr,
             skip_box_thr=skip_box_thr,
-            conf_type='avg'
+            conf_type='avg',
+            allows_overflow=True
         )
 
         print("avg")
@@ -224,26 +225,50 @@ class TestWBF(unittest.TestCase):
         ## test for scores
 
         # cluster 2
-        n_box = 2
-        avg = (0.9 * 2 + 0.8 * 2) / n_box
-        rescaled_avg = avg * min(2 + 1, n_box) / (2 + 1)
-        np.testing.assert_allclose(scores[0],  rescaled_avg)
+        avg = (0.9 * 2 + 0.8 * 2) / (2 + 1)
+        np.testing.assert_allclose(scores[0], avg)
 
         # cluster 1
-        n_box = 3
-        avg = (0.7 * 2 + 0.85 * 1 + 0.75 * 1) / n_box
-        rescaled_avg = avg * min(2 + 1, n_box) / (2 + 1)
-        np.testing.assert_allclose(scores[1],  rescaled_avg)
+        avg = (0.7 * 2 + 0.85 * 1 + 0.75 * 1) / (2 + 1)
+        np.testing.assert_allclose(scores[1], avg)
 
         # cluster 3
-        n_box = 1
-        avg = 0.65 * 1 / n_box
-        rescaled_avg = avg * min(2 + 1, n_box) / (2 + 1)
-        np.testing.assert_allclose(scores[2], rescaled_avg)
+        avg = 0.65 * 1 / (2 + 1)
+        np.testing.assert_allclose(scores[2], avg)
 
         ## test for labels
         np.testing.assert_array_equal(labels, [1, 1, 0])
 
+    def test_simple_case_for_all_methods(self):
+        boxes_list = []
+        scores_list = []
+        labels_list = []
+        weigths = []
+        fixed_score = 0.8
+        fixed_box = [0., 0., 0.1, 0.1]
+        n_models = 5
+        # All models have the same result with one box
+        for _ in range(n_models):
+            boxes_list.append([fixed_box])
+            scores_list.append([fixed_score])
+            labels_list.append([0])
+            weigths.append(1 / n_models)
+
+        for conf_type in ['avg', 'max', 'box_and_model_avg', 'absent_model_aware_avg']:
+            for allows_overflow in [True, False]:
+                boxes, scores, labels = weighted_boxes_fusion(
+                    boxes_list,
+                    scores_list,
+                    labels_list,
+                    weights=weigths,
+                    iou_thr=0.4,
+                    skip_box_thr=0.,
+                    conf_type=conf_type,
+                    allows_overflow=allows_overflow
+                )
+                np.testing.assert_allclose(scores, [fixed_score])
+                np.testing.assert_array_equal(labels, [0])
+                np.testing.assert_allclose(boxes[0], fixed_box)
 
 if __name__ == "__main__":
     unittest.main()
