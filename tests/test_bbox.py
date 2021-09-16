@@ -270,5 +270,30 @@ class TestWBF(unittest.TestCase):
                 np.testing.assert_array_equal(labels, [0])
                 np.testing.assert_allclose(boxes[0], fixed_box)
 
+    def test_max_conf_type(self):
+        boxes_list = [[
+            [0.1, 0.1, 0.2, 0.2],
+        ], [
+            [0.1, 0.1, 0.2, 0.2],
+        ]]
+        scores_list = [[0.9], [0.8]]
+        labels_list = [[0], [0]]
+        weights = [1, 2]
+
+        iou_thr = 0.5
+        skip_box_thr = 0.0001
+
+        boxes, scores, labels = weighted_boxes_fusion(
+            boxes_list,
+            scores_list,
+            labels_list,
+            weights=weights,
+            iou_thr=iou_thr,
+            skip_box_thr=skip_box_thr,
+            conf_type='max'
+        )
+        # 0.9 * 1 < 0.8 * 2, so the result is 0.8
+        np.testing.assert_allclose(scores, [0.8])
+
 if __name__ == "__main__":
     unittest.main()
