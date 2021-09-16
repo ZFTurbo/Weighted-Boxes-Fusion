@@ -1,6 +1,10 @@
 # Release notes
 All notable changes to this project will be documented in this file.
 
+##  v1.0.7
+- Fixed incorrect values after WBF for allows_overflow = False mode. See details [here](https://github.com/ZFTurbo/Weighted-Boxes-Fusion/pull/41).
+- Fixed incorrect values after WBF for conf_type = 'max' mode. See details [here](https://github.com/ZFTurbo/Weighted-Boxes-Fusion/pull/42). 
+
 ##  v1.0.6
 - Added 2 new methods for average boxes: '_box_and_model_avg_' and '_absent_model_aware_avg_'. See details [here](https://github.com/ZFTurbo/Weighted-Boxes-Fusion/pull/25).
 Both methods fix issue with confidences larger than 1 after ensemble. Also it gives better results for cases when there are more than 1 box goes to cluster from same model.
