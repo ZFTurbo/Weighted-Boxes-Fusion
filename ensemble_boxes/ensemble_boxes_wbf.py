@@ -204,7 +204,6 @@ def weighted_boxes_fusion(boxes_list, scores_list, labels_list, weights=None, io
                 _, idx = np.unique(clustered_boxes[:, 3], return_index=True)
                 # rescale by unique model weights
                 weighted_boxes[i][1] = weighted_boxes[i][1] *  clustered_boxes[idx, 2].sum() / weights.sum()
-
             elif conf_type == 'absent_model_aware_avg':
                 # get unique model index in the cluster
                 models = np.unique(clustered_boxes[:, 3]).astype(int)
@@ -213,6 +212,8 @@ def weighted_boxes_fusion(boxes_list, scores_list, labels_list, weights=None, io
                 mask[models] = False
                 # absent model aware weighted average
                 weighted_boxes[i][1] = weighted_boxes[i][1] * len(clustered_boxes) / (weighted_boxes[i][2] + weights[mask].sum())
+            elif conf_type == 'max':
+                weighted_boxes[i][1] = weighted_boxes[i][1] / weights.max()
             elif not allows_overflow:
                 weighted_boxes[i][1] = weighted_boxes[i][1] * min(len(weights), len(clustered_boxes)) / weights.sum()
             else:
