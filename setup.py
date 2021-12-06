@@ -5,7 +5,7 @@ except:
 
 setup(
     name='ensemble_boxes',
-    version='1.0.7',
+    version='1.0.8',
     author='Roman Solovyev (ZFTurbo)',
     packages=['ensemble_boxes', ],
     url='https://github.com/ZFTurbo/Weighted-Boxes-Fusion',

@@ -1,6 +1,10 @@
 # Release notes
 All notable changes to this project will be documented in this file.
 
+##  v1.0.8
+- Speed up of find_matching_box function. See details [here](https://github.com/ZFTurbo/Weighted-Boxes-Fusion/pull/48). 
+  OID benchmark: 285 sec -> 242 sec. COCO benchmark: 1055 sec -> 643 sec
+
 ##  v1.0.7
 - Fixed incorrect values after WBF for allows_overflow = False mode. See details [here](https://github.com/ZFTurbo/Weighted-Boxes-Fusion/pull/41).
 - Fixed incorrect values after WBF for conf_type = 'max' mode. See details [here](https://github.com/ZFTurbo/Weighted-Boxes-Fusion/pull/42). 
