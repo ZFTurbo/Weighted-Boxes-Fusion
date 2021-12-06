@@ -5,7 +5,7 @@ __author__ = 'ZFTurbo: https://kaggle.com/zfturbo'
 import warnings
 import numpy as np
 from numba import jit
-
+import time
 
 @jit(nopython=True)
 def bb_intersection_over_union(A, B) -> float:
@@ -147,6 +147,47 @@ def find_matching_box(boxes_list, new_box, match_iou):
     return best_index, best_iou
 
 
+def find_matching_box_quickly(boxes_list, new_box, match_iou):
+    """ Reimplementation of find_matching_box with numpy instead of loops. Gives significant speed up for larger arrays
+        (~100x). This was previously the bottleneck since the function is called for every entry in the array.
+    """
+    def bb_iou_array(boxes, new_box):
+        # bb interesection over union
+        xA = np.maximum(boxes[:, 0], new_box[0])
+        yA = np.maximum(boxes[:, 1], new_box[1])
+        xB = np.minimum(boxes[:, 2], new_box[2])
+        yB = np.minimum(boxes[:, 3], new_box[3])
+
+        interArea = np.maximum(xB - xA, 0) * np.maximum(yB - yA, 0)
+
+        # compute the area of both the prediction and ground-truth rectangles
+        boxAArea = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
+        boxBArea = (new_box[2] - new_box[0]) * (new_box[3] - new_box[1])
+
+        iou = interArea / (boxAArea + boxBArea - interArea)
+
+        return iou
+
+    if boxes_list.shape[0] == 0:
+        return -1, match_iou
+
+    # boxes = np.array(boxes_list)
+    boxes = boxes_list
+
+    ious = bb_iou_array(boxes[:, 4:], new_box[4:])
+
+    ious[boxes[:, 0] != new_box[0]] = -1
+
+    best_idx = np.argmax(ious)
+    best_iou = ious[best_idx]
+
+    if best_iou <= match_iou:
+        best_iou = match_iou
+        best_idx = -1
+
+    return best_idx, best_iou
+
+
 def weighted_boxes_fusion(boxes_list, scores_list, labels_list, weights=None, iou_thr=0.55, skip_box_thr=0.0, conf_type='avg', allows_overflow=False):
     '''
     :param boxes_list: list of boxes predictions from each model, each box is 4 numbers.
@@ -184,26 +225,27 @@ def weighted_boxes_fusion(boxes_list, scores_list, labels_list, weights=None, io
     for label in filtered_boxes:
         boxes = filtered_boxes[label]
         new_boxes = []
-        weighted_boxes = []
+        weighted_boxes = np.empty((0,8))
         # Clusterize boxes
         for j in range(0, len(boxes)):
-            index, best_iou = find_matching_box(weighted_boxes, boxes[j], iou_thr)
+            index, best_iou = find_matching_box_quickly(weighted_boxes, boxes[j], iou_thr)
+
             if index != -1:
                 new_boxes[index].append(boxes[j])
                 weighted_boxes[index] = get_weighted_box(new_boxes[index], conf_type)
             else:
                 new_boxes.append([boxes[j].copy()])
-                weighted_boxes.append(boxes[j].copy())
+                weighted_boxes = np.vstack((weighted_boxes, boxes[j].copy()))
         # Rescale confidence based on number of models and boxes
         for i in range(len(new_boxes)):
             clustered_boxes = np.array(new_boxes[i])
             if conf_type == 'box_and_model_avg':
                 # weighted average for boxes
-                weighted_boxes[i][1] = weighted_boxes[i][1] * len(clustered_boxes) / weighted_boxes[i][2]
+                weighted_boxes[i, 1] = weighted_boxes[i, 1] * len(clustered_boxes) / weighted_boxes[i, 2]
                 # identify unique model index by model index column
                 _, idx = np.unique(clustered_boxes[:, 3], return_index=True)
                 # rescale by unique model weights
-                weighted_boxes[i][1] = weighted_boxes[i][1] *  clustered_boxes[idx, 2].sum() / weights.sum()
+                weighted_boxes[i, 1] = weighted_boxes[i, 1] *  clustered_boxes[idx, 2].sum() / weights.sum()
             elif conf_type == 'absent_model_aware_avg':
                 # get unique model index in the cluster
                 models = np.unique(clustered_boxes[:, 3]).astype(int)
@@ -211,14 +253,14 @@ def weighted_boxes_fusion(boxes_list, scores_list, labels_list, weights=None, io
                 mask = np.ones(len(weights), dtype=bool)
                 mask[models] = False
                 # absent model aware weighted average
-                weighted_boxes[i][1] = weighted_boxes[i][1] * len(clustered_boxes) / (weighted_boxes[i][2] + weights[mask].sum())
+                weighted_boxes[i, 1] = weighted_boxes[i, 1] * len(clustered_boxes) / (weighted_boxes[i, 2] + weights[mask].sum())
             elif conf_type == 'max':
-                weighted_boxes[i][1] = weighted_boxes[i][1] / weights.max()
+                weighted_boxes[i, 1] = weighted_boxes[i, 1] / weights.max()
             elif not allows_overflow:
-                weighted_boxes[i][1] = weighted_boxes[i][1] * min(len(weights), len(clustered_boxes)) / weights.sum()
+                weighted_boxes[i, 1] = weighted_boxes[i, 1] * min(len(weights), len(clustered_boxes)) / weights.sum()
             else:
-                weighted_boxes[i][1] = weighted_boxes[i][1] * len(clustered_boxes) / weights.sum()
-        overall_boxes.append(np.array(weighted_boxes))
+                weighted_boxes[i, 1] = weighted_boxes[i, 1] * len(clustered_boxes) / weights.sum()
+        overall_boxes.append(weighted_boxes)
     overall_boxes = np.concatenate(overall_boxes, axis=0)
     overall_boxes = overall_boxes[overall_boxes[:, 1].argsort()[::-1]]
     boxes = overall_boxes[:, 4:]
