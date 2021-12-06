@@ -1,0 +1,13 @@
+LICENSE
+README.md
+setup.py
+ensemble_boxes/__init__.py
+ensemble_boxes/ensemble_boxes_nms.py
+ensemble_boxes/ensemble_boxes_nmw.py
+ensemble_boxes/ensemble_boxes_wbf.py
+ensemble_boxes/ensemble_boxes_wbf_3d.py
+ensemble_boxes.egg-info/PKG-INFO
+ensemble_boxes.egg-info/SOURCES.txt
+ensemble_boxes.egg-info/dependency_links.txt
+ensemble_boxes.egg-info/requires.txt
+ensemble_boxes.egg-info/top_level.txt
