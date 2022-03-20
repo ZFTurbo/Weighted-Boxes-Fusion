@@ -7,3 +7,4 @@ from .ensemble_boxes_nms import nms_method
 from .ensemble_boxes_nms import nms
 from .ensemble_boxes_nms import soft_nms
 from .ensemble_boxes_wbf_3d import weighted_boxes_fusion_3d
+from .ensemble_boxes_wbf_1d import weighted_boxes_fusion_1d
