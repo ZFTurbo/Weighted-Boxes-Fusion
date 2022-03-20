@@ -76,6 +76,10 @@ More examples can be found in [example.py](examples/example.py)
 
 There is support for 3D boxes in WBF method with `weighted_boxes_fusion_3d` function. Check example of usage in [example_3d.py](examples/example_3d.py)
 
+#### 1D version
+
+There is support for 1D line segments in WBF method with `weighted_boxes_fusion_1d` function. Check example of usage in [example_1d.py](examples/example_1d.py). It was reported that 1D variant can be useful in Named-entity recognition (NER) type of tasks for Natural Language Processing (NLP) problems. Check discussion [here](https://www.kaggle.com/c/feedback-prize-2021/discussion/313389).
+
 ## Accuracy and speed comparison
 
 Comparison was made for ensemble of 5 different object detection models predictions trained on [Open Images Dataset](https://storage.googleapis.com/openimages/web/index.html) (500 classes).
