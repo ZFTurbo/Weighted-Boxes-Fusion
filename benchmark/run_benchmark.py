@@ -125,6 +125,11 @@ def process_single_id(id, res_boxes, weights, params):
                                                                        weights=weights, iou_thr=params['intersection_thr'],
                                                                        skip_box_thr=params['skip_box_thr'],
                                                                            conf_type=params['conf_type'])
+    elif run_type == 'wbf_exp':
+        merged_boxes, merged_scores, merged_labels = weighted_boxes_fusion_experimental(boxes_list, scores_list, labels_list,
+                                                                       weights=weights, iou_thr=params['intersection_thr'],
+                                                                       skip_box_thr=params['skip_box_thr'],
+                                                                           conf_type=params['conf_type'])
     elif run_type == 'nms':
         iou_thr = params['iou_thr']
         merged_boxes, merged_scores, merged_labels = nms(boxes_list, scores_list, labels_list, weights=weights, iou_thr=iou_thr)
@@ -303,9 +308,19 @@ if __name__ == '__main__':
             'verbose': True,
         }
 
-    if 1:
+    if 0:
         params = {
             'run_type': 'wbf',
+            'skip_box_thr': 0.001,
+            'intersection_thr': 0.7,
+            'conf_type': 'avg',
+            'limit_boxes': 30000,
+            'verbose': False,
+        }
+
+    if 1:
+        params = {
+            'run_type': 'wbf_exp',
             'skip_box_thr': 0.001,
             'intersection_thr': 0.7,
             'conf_type': 'avg',
@@ -339,5 +354,9 @@ if __name__ == '__main__':
     ]
     weights = [0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 5, 5, 7, 7, 9, 9, 8, 8, 5, 5, 10]
     assert(len(benchmark_csv) == len(weights))
-    ensemble(benchmark_csv, weights, params, True)
-
+    ensemble(
+        benchmark_csv,
+        weights,
+        params,
+        get_score_init=False
+    )
