@@ -77,17 +77,12 @@ def get_weighted_box(
     """
 
     box = np.zeros(8, dtype=np.float32)
-    conf = 0
-    conf_list = []
-    w = 0
-    for b in boxes:
-        box[4:] += (b[1] * b[4:])
-        conf += b[1]
-        conf_list.append(b[1])
-        w += b[2]
-    box[0] = boxes[0][0]
+    conf = boxes[:, 1].sum()
+    w = boxes[:, 2].sum()
+    box[4:] = (boxes[:, 1:2] * boxes[:, 4:]).sum(axis=0)
+    box[0] = boxes[0, 0]
     if conf_type == 'max':
-        box[1] = np.array(conf_list).max()
+        box[1] = np.array(boxes[:, 1]).max()
     else:
         box[1] = conf / len(boxes)
     box[2] = w
