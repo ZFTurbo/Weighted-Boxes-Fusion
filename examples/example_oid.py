@@ -153,6 +153,11 @@ def process_single_id(id, res, weights, params):
                                                                        weights=weights, iou_thr=params['intersection_thr'],
                                                                        skip_box_thr=params['skip_box_thr'],
                                                                            conf_type=params['conf_type'])
+    elif run_type == 'wbf_exp':
+        merged_boxes, merged_scores, merged_labels = weighted_boxes_fusion_experimental(boxes_list, scores_list, labels_list,
+                                                                       weights=weights, iou_thr=params['intersection_thr'],
+                                                                       skip_box_thr=params['skip_box_thr'],
+                                                                           conf_type=params['conf_type'])
     elif run_type == 'nms':
         iou_thr = params['iou_thr']
         merged_boxes, merged_scores, merged_labels = nms(boxes_list, scores_list, labels_list, weights=weights, iou_thr=iou_thr)
