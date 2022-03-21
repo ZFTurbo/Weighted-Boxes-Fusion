@@ -1,6 +1,9 @@
 # Release notes
 All notable changes to this project will be documented in this file.
 
+##  v1.0.9
+- WBF 1D variant for line segments was added. It was reported that 1D variant can be useful in Named-entity recognition (NER) type of tasks for Natural Language Processing (NLP) problems. Check discussion [here](https://www.kaggle.com/c/feedback-prize-2021/discussion/313389).  
+
 ##  v1.0.8
 - Speed up of find_matching_box function. See details [here](https://github.com/ZFTurbo/Weighted-Boxes-Fusion/pull/48). 
   OID benchmark: 285 sec -> 242 sec. COCO benchmark: 1055 sec -> 643 sec
