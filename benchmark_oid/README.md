@@ -18,4 +18,4 @@ Model scores at local validation:
 
 You can download model predictions as well as ground truth labels from here: [test_data.zip](https://github.com/ZFTurbo/Weighted-Boxes-Fusion/releases/download/v1.0/test_data.zip)
 
-Ensemble script for them is available here: [benchmark_oid.py](benchmark_oid/benchmark_oid.py)
+Ensemble script for them is available here: [run_benchmark_oid.py](run_benchmark_oid.py)
