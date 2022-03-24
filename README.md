@@ -84,6 +84,7 @@ There is support for 1D line segments in WBF method with `weighted_boxes_fusion_
 
 * Benchmark for [Open Images Dataset (5 models)](benchmark_oid/README.md)
 * Benchmark for [COCO Dataset (10 models)](benchmark_coco/README.md)
+* Benchmark for [NLP Dataset (10 models)](benchmark_nlp/README.md) - example for one-dimensional WBF variant
 
 ## Description of WBF method and citation
 
