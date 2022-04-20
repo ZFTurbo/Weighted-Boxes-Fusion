@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 - Small comments/syntax fixes, removed unused functions, removed unused numba dependency. Slightly increased speed for default 'avg' method.
 - Added new version of WBF, which works faster because of more vectorized structure. It's avoiding cycles and if-statements. Changes are allowed to increase speed 20-30%. Score on test data a little bit decreased from 0.598214 to 0.597297.
 To use: ```from ensemble_boxes.ensemble_boxes_wbf_experimental import weighted_boxes_fusion_experimental```
+- NLP benchmark was added. It's used for WBF 1D variant. Credits for benchmarks and idea of using WBF for NLP task goes to [Chris Deotte](https://www.kaggle.com/cdeotte) and [Udbhav Bamba](https://www.kaggle.com/ubamba98).
+- Benchmarks moved into separate folders (benchmark_oid, benchmark_coco, benchmark_nlp)
 
 ##  v1.0.8
 - Speed up of find_matching_box function. See details [here](https://github.com/ZFTurbo/Weighted-Boxes-Fusion/pull/48). 
