@@ -183,10 +183,25 @@ def nms_method(boxes, scores, labels, method=3, iou_thr=0.5, sigma=0.5, thresh=0
             for i in range(len(weights)):
                 scores[i] = (np.array(scores[i]) * weights[i]) / weights.sum()
 
+    # Do the checks and skip empty predictions
+    filtered_boxes = []
+    filtered_scores = []
+    filtered_labels = []
+    for i in range(len(boxes)):
+        if len(boxes[i]) != len(scores[i]) or len(boxes[i]) != len(labels[i]):
+            print('Check length of boxes and scores and labels: {} {} {} at position: {}. Boxes are skipped!'.format(len(boxes[i]), len(scores[i]), len(labels[i]), i))
+            continue
+        if len(boxes[i]) == 0:
+            # print('Empty boxes!')
+            continue
+        filtered_boxes.append(boxes[i])
+        filtered_scores.append(scores[i])
+        filtered_labels.append(labels[i])
+
     # We concatenate everything
-    boxes = np.concatenate(boxes)
-    scores = np.concatenate(scores)
-    labels = np.concatenate(labels)
+    boxes = np.concatenate(filtered_boxes)
+    scores = np.concatenate(filtered_scores)
+    labels = np.concatenate(filtered_labels)
 
     # Fix coordinates and removed zero area boxes
     boxes, scores, labels = prepare_boxes(boxes, scores, labels)

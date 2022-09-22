@@ -295,5 +295,35 @@ class TestWBF(unittest.TestCase):
         # 0.9 * 1 < 0.8 * 2, so the result is 0.8
         np.testing.assert_allclose(scores, [0.8])
 
+    def test_empty_boxes_nms(self):
+        boxes_list = [
+            [
+            ],
+            [
+                [0.04, 0.56, 0.84, 0.92]
+            ],
+        ]
+        scores_list = [
+            [],
+            [0.5]
+        ]
+        labels_list = [
+            [],
+            [1]
+        ]
+        weights = [2, 1]
+
+        boxes, scores, labels = nms_method(
+            boxes_list,
+            scores_list,
+            labels_list,
+            method=3,
+            weights=weights,
+            iou_thr=0.5,
+            sigma=0.5,
+            thresh=0.001
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
