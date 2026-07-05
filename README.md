@@ -17,20 +17,6 @@ Python 3.*, Numpy, Numba
 
 `pip install ensemble-boxes`
 
-## Development setup
-
-Clone the repo and run the setup script to create a virtual environment (`wbf`), install all dependencies, and install the package in editable mode:
-
-```bash
-source setup_dev_env.sh
-```
-
-To run tests:
-
-```bash
-python -m pytest tests/
-```
-
 ## Usage examples
 
 Coordinates for boxes expected to be normalized e.g in range [0; 1]. Order: x1, y1, x2, y2. 
@@ -116,4 +102,18 @@ If you find this code useful please cite:
   year={2021},
   publisher={Elsevier}
 }
+```
+
+## Development setup
+
+Clone the repo and run the setup script to create a virtual environment (`wbf`) and install dependencies (supports python 3.*):
+
+```bash
+source setup_dev_env.sh
+```
+
+To run tests:
+
+```bash
+python -m pytest tests/
 ```
