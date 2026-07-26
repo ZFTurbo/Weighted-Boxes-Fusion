@@ -104,7 +104,7 @@ If you find this code useful please cite:
 }
 ```
 
-## Notable Adaptations and Citations of WBF method
+## Notable Adaptations and Implementations of WBF method
 
 This document summarizes notable papers that have cited, adapted and implemented WBF method.
 
