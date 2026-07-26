@@ -1,6 +1,4 @@
-## Notable Adaptations and Implementations of WBF method
-
-This section summarizes notable papers that have cited, adapted and implemented WBF method.
+## Notable Adoptions and Implementations of WBF methods
 
 - **[WBF-ODAL: Weighted Boxes Fusion for 3D Object Detection from Automotive LiDAR Point Clouds](https://www.researchgate.net/publication/387917705_WBF-ODAL_Weighted_Boxes_Fusion_for_3D_Object_Detection_from_Automotive_LiDAR_Point_Clouds)**
   Dhvani Katkoria, Jaya Sreevalsan-Nair, Mayank Sati, Sunil Karunakaran — *IEEE International Conference on Vehicular Technology and Transportation Systems (ICVTTS)*, 2024.  

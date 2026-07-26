@@ -104,6 +104,4 @@ If you find this code useful please cite:
 }
 ```
 
-## Notable Adaptations and Implementations of WBF method
-
 See [docs/notable adoptions.md](docs/notable_adoptions.md) for a list of notable projects that have used the WBF method.
