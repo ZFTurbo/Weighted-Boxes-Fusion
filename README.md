@@ -103,3 +103,17 @@ If you find this code useful please cite:
   publisher={Elsevier}
 }
 ```
+
+## Development setup
+
+Clone the repo and run the setup script to create a virtual environment (`wbf`) and install dependencies (supports python 3.*):
+
+```bash
+source setup_dev_env.sh
+```
+
+To run tests:
+
+```bash
+python -m pytest tests/
+```
