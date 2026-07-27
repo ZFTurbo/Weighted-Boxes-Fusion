@@ -3,4 +3,4 @@ numba==0.60.0
 matplotlib==3.9.4
 opencv-python==4.11.0.86
 pandas==2.3.3
-pytest==8.4.2
+pytest==9.0.3
