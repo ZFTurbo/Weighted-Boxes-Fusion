@@ -104,6 +104,10 @@ If you find this code useful please cite:
 }
 ```
 
+## Adoptions
+
+See [docs/notable adoptions.md](docs/notable_adoptions.md) for a list of notable projects that have used the WBF method.
+
 ## Development setup
 
 Clone the repo and run the setup script to create a virtual environment (`wbf`) and install dependencies (supports python 3.*):
