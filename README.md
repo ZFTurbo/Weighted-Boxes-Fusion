@@ -80,6 +80,10 @@ There is support for 3D boxes in WBF method with `weighted_boxes_fusion_3d` func
 
 There is support for 1D line segments in WBF method with `weighted_boxes_fusion_1d` function. Check example of usage in [example_1d.py](examples/example_1d.py). It was reported that 1D variant can be useful in Named-entity recognition (NER) type of tasks for Natural Language Processing (NLP) problems. Check discussion [here](https://www.kaggle.com/c/feedback-prize-2021/discussion/313389).
 
+#### Rotated version
+
+There is support for rotated (oriented) boxes in WBF method with `weighted_boxes_fusion_rotated` function. Each box is `(cx, cy, w, h, angle)` with `cx, cy, w, h` normalized to [0; 1], and `angle` in degrees using the le90 (long-edge 90) convention from MMRotate: angle in [-90, 90), with `w` always the longer edge. Check example of usage in [example_rotated.py](examples/example_rotated.py).
+
 ## Benchmarks
 
 * Benchmark for [Open Images Dataset (5 models)](benchmark_oid/README.md)
