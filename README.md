@@ -86,6 +86,10 @@ There is support for rotated (oriented) boxes in WBF method with `weighted_boxes
 
 **Note:** rotated boxes must be normalized by the same scale for both axes, e.g. divide `cx, cy, w, h` (in pixels) by `max(image_width, image_height)`, or the image must be square. Normalizing x by width and y by height separately on a non-square image turns a rotated rectangle into a parallelogram and changes its angle. Multiply the fused `cx, cy, w, h` by the same scale to get pixels back.
 
+#### Quadrangle version
+
+The alternative 4-vertex declaration `(x1, y1, x2, y2, x3, y3, x4, y4)` used by annotation formats like DOTA and HRSC2016 is supported with `weighted_boxes_fusion_quadrangle` function. All 8 coordinates are normalized to [0; 1]; vertices may be given in any order/winding and are canonically re-ordered internally before fusion. Check example of usage in [example_quadrangle.py](examples/example_quadrangle.py).
+
 ## Benchmarks
 
 * Benchmark for [Open Images Dataset (5 models)](benchmark_oid/README.md)
