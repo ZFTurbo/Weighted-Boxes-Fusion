@@ -277,8 +277,13 @@ def weighted_boxes_fusion_rotated(
     '''
     :param boxes_list: list of boxes predictions from each model, each box is 5 numbers:
     (cx, cy, w, h, angle). It has 3 dimensions (models_number, model_preds, 5).
-    cx, cy, w, h are float normalized coordinates [0; 1] relative to image width/height,
-    matching the convention of the axis-aligned weighted_boxes_fusion.
+    cx, cy, w, h are float normalized coordinates [0; 1]. Unlike the axis-aligned
+    weighted_boxes_fusion, x and y must be normalized by the SAME scale, e.g. divide
+    cx, cy, w, h (in pixels) by max(image_width, image_height), or the image must be square.
+    Normalizing x by width and y by height separately on a non-square image skews the
+    box: the rotated rectangle becomes a parallelogram and its angle changes, so
+    (cx, cy, w, h, angle) no longer describes it. To get pixel coordinates back,
+    multiply cx, cy, w, h by the same scale.
     angle is in DEGREES and uses the le90 (long-edge 90) layout: angle in [-90, 90),
     and w is always the LONGER edge of the box (w >= h), with angle being the rotation of
     that long edge from the +x axis towards the +y axis (clockwise on screen, as image y
@@ -291,7 +296,7 @@ def weighted_boxes_fusion_rotated(
         Ultralytics YOLO OBB xywhr (radians): angle = np.degrees(r)
         Detectron2 RotatedBoxes (degrees, counter-clockwise): pass as is
         OpenCV minAreaRect (degrees): pass as is
-    and normalize cx, cy, w, h to [0; 1].
+    and normalize cx, cy, w, h to [0; 1] by a single scale (i.e. max (w,h), see above).
     :param scores_list: list of scores for each model
     :param labels_list: list of labels for each model
     :param weights: list of weights for each model. Default: None, which means weight == 1 for each model

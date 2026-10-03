@@ -84,6 +84,8 @@ There is support for 1D line segments in WBF method with `weighted_boxes_fusion_
 
 There is support for rotated (oriented) boxes in WBF method with `weighted_boxes_fusion_rotated` function. Each box is `(cx, cy, w, h, angle)` with `cx, cy, w, h` normalized to [0; 1], and `angle` in degrees using the le90 (long-edge 90) convention from MMRotate (in degrees): angle in [-90, 90), with `w` always the longer edge. Check example of usage in [example_rotated.py](examples/example_rotated.py).
 
+**Note:** rotated boxes must be normalized by the same scale for both axes, e.g. divide `cx, cy, w, h` (in pixels) by `max(image_width, image_height)`, or the image must be square. Normalizing x by width and y by height separately on a non-square image turns a rotated rectangle into a parallelogram and changes its angle. Multiply the fused `cx, cy, w, h` by the same scale to get pixels back.
+
 ## Benchmarks
 
 * Benchmark for [Open Images Dataset (5 models)](benchmark_oid/README.md)
