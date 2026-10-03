@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 from ensemble_boxes import *
 from ensemble_boxes.ensemble_boxes_wbf_quadrangle import bb_intersection_over_union_quadrangle
-from ensemble_boxes.ensemble_boxes_wbf_rotated import bb_intersection_over_union_rotated
+from ensemble_boxes.ensemble_boxes_wbf_rotated import bb_intersection_over_union_rotated, rotated_box_corners, polygon_area
 
 
 class TestWBFQuadrangle(unittest.TestCase):
@@ -61,6 +61,35 @@ class TestWBFQuadrangle(unittest.TestCase):
         self.assertEqual(len(boxes), 1)
         # Both describe the identical box, so the fused corners must be that same box.
         np.testing.assert_allclose(np.sort(boxes[0]), np.sort(np.array(box_a)), atol=1e-4)
+
+    def test_near_axis_aligned_tilt_fusion(self):
+        # Regression: the same 0.4x0.2 box predicted tilted by +2 and -2 degrees. The
+        # top-most vertex is the top-left corner in one and the top-right corner in the
+        # other, so the canonical order starts at different corners. Corresponding
+        # corners must still be averaged together (previously fused into a diamond
+        # with area ~0.0435 instead of ~0.08).
+        box_pos = rotated_box_corners(0.5, 0.5, 0.4, 0.2, 2).reshape(-1).tolist()
+        box_neg = rotated_box_corners(0.5, 0.5, 0.4, 0.2, -2).reshape(-1).tolist()
+        boxes_list = [[box_pos], [box_neg]]
+        scores_list = [[0.9], [0.9]]
+        labels_list = [[0], [0]]
+
+        boxes, scores, labels = weighted_boxes_fusion_quadrangle(
+            boxes_list,
+            scores_list,
+            labels_list,
+            weights=[1, 1],
+            iou_thr=0.5,
+            skip_box_thr=0.0001,
+        )
+
+        self.assertEqual(len(boxes), 1)
+        fused = boxes[0].reshape(4, 2)
+        # Equal scores: the average of +2 and -2 degrees is the axis-aligned box
+        # (shrunk by cos(2 deg), i.e. ~1e-4 off at the corners).
+        self.assertAlmostEqual(polygon_area(fused), 0.08, places=3)
+        expected = np.array([[0.3, 0.4], [0.7, 0.4], [0.7, 0.6], [0.3, 0.6]])
+        np.testing.assert_allclose(fused[np.lexsort(fused.T)], expected[np.lexsort(expected.T)], atol=1e-3)
 
     def test_low_iou_boxes_stay_separate(self):
         boxes_list = [

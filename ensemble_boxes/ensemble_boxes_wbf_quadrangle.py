@@ -100,10 +100,29 @@ def prefilter_boxes(boxes, scores, labels, weights, thr):
     return new_boxes
 
 
+def align_quadrangle_to_reference(pts, ref):
+    """
+    Cyclically shift the vertices of a CCW-ordered quadrangle so that each vertex
+    corresponds to the nearest vertex of the CCW-ordered reference quadrangle.
+    The canonical order alone is not enough: for nearly axis-aligned boxes the
+    top-most vertex flips between the top-left and top-right corner as the box
+    tilts from +eps to -eps degrees, so the same corner would otherwise land at
+    different positions in different predictions.
+    :param pts: flat length-8 sequence or (4, 2) array, CCW order
+    :param ref: flat length-8 sequence or (4, 2) array, CCW order
+    :return: flat length-8 numpy array of aligned vertices
+    """
+    pts = np.asarray(pts, dtype=float).reshape(4, 2)
+    ref = np.asarray(ref, dtype=float).reshape(4, 2)
+    shift = min(range(4), key=lambda k: ((np.roll(pts, -k, axis=0) - ref) ** 2).sum())
+    return np.roll(pts, -shift, axis=0).reshape(-1)
+
+
 def get_weighted_box(boxes, conf_type='avg'):
     """
     Create weighted box for set of quadrangles
-    :param boxes: set of boxes to fuse
+    :param boxes: set of boxes to fuse. boxes[0] (the highest scoring one) is the reference
+        whose vertex order all other boxes are aligned to before averaging.
     :param conf_type: type of confidence one of 'avg', 'max', 'box_and_model_avg', 'absent_model_aware_avg'
     :return: weighted box (label, score, weight, model index, x1, y1, x2, y2, x3, y3, x4, y4)
     """
@@ -112,8 +131,9 @@ def get_weighted_box(boxes, conf_type='avg'):
     conf = 0
     conf_list = []
     w = 0
+    ref = boxes[0][4:]
     for b in boxes:
-        box[4:] += (b[1] * b[4:])
+        box[4:] += (b[1] * align_quadrangle_to_reference(b[4:], ref))
         conf += b[1]
         conf_list.append(b[1])
         w += b[2]
