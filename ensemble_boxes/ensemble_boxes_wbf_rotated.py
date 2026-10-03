@@ -155,15 +155,11 @@ def prefilter_boxes(boxes, scores, labels, weights, thr):
                 warnings.warn("Zero area box skipped: {}.".format(box_part))
                 continue
 
-            # le90 convention: W is always the longer edge. Swap and rotate if violated.
+            # Normalize to le90: W is the longer edge, angle in [-90, 90).
+            # Both steps describe the same rectangle, so no information is lost.
             if w < h:
-                warnings.warn('W < H in box (violates le90 long-edge convention). Swapping W/H and rotating angle by 90 degrees.')
                 w, h = h, w
                 angle = angle + 90
-
-            # Wrap angle into [-90, 90)
-            if angle < -90 or angle >= 90:
-                warnings.warn('Angle out of [-90, 90) range in box. Wrapping it.')
             angle = wrap_angle(angle)
 
             # [label, score, weight, model index, cx, cy, w, h, angle]
