@@ -82,7 +82,7 @@ There is support for 1D line segments in WBF method with `weighted_boxes_fusion_
 
 #### Rotated version
 
-There is support for rotated (oriented) boxes in WBF method with `weighted_boxes_fusion_rotated` function. Each box is `(cx, cy, w, h, angle)` with `cx, cy, w, h` normalized to [0; 1], and `angle` in degrees using the le90 (long-edge 90) convention from MMRotate: angle in [-90, 90), with `w` always the longer edge. Check example of usage in [example_rotated.py](examples/example_rotated.py).
+There is support for rotated (oriented) boxes in WBF method with `weighted_boxes_fusion_rotated` function. Each box is `(cx, cy, w, h, angle)` with `cx, cy, w, h` normalized to [0; 1], and `angle` in degrees using the le90 (long-edge 90) convention from MMRotate (in degrees): angle in [-90, 90), with `w` always the longer edge. Check example of usage in [example_rotated.py](examples/example_rotated.py).
 
 ## Benchmarks
 

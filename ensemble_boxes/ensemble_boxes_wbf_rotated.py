@@ -164,7 +164,7 @@ def prefilter_boxes(boxes, scores, labels, weights, thr):
             # Wrap angle into [-90, 90)
             if angle < -90 or angle >= 90:
                 warnings.warn('Angle out of [-90, 90) range in box. Wrapping it.')
-            angle = ((angle + 90) % 180) - 90
+            angle = wrap_angle(angle)
 
             # [label, score, weight, model index, cx, cy, w, h, angle]
             b = [int(label), float(score) * weights[t], weights[t], t, cx, cy, w, h, angle]
@@ -180,10 +180,36 @@ def prefilter_boxes(boxes, scores, labels, weights, thr):
     return new_boxes
 
 
+def wrap_angle(angle):
+    """ Wrap angle in degrees into [-90, 90). """
+    return ((angle + 90) % 180) - 90
+
+
+def align_to_reference(w, h, angle, ref_w, ref_h, ref_angle):
+    """
+    A rotated box has two equivalent parametrizations: (w, h, angle) and
+    (h, w, angle + 90). Pick the one closest to the reference box, with the angle
+    unwrapped to lie within 90 degrees of ref_angle, so that boxes can be averaged
+    linearly. Closeness is |log w ratio| + |log h ratio| + |angle difference in radians|:
+    elongated boxes keep their own orientation, while near-square boxes predicted
+    ~90 degrees apart are swapped so they fuse to the shared orientation instead of
+    the meaningless midpoint between the two.
+    :return: (w, h, angle) aligned to the reference
+    """
+    d_same = wrap_angle(angle - ref_angle)
+    d_swap = wrap_angle(angle + 90 - ref_angle)
+    cost_same = abs(np.log(w / ref_w)) + abs(np.log(h / ref_h)) + abs(np.radians(d_same))
+    cost_swap = abs(np.log(h / ref_w)) + abs(np.log(w / ref_h)) + abs(np.radians(d_swap))
+    if cost_swap < cost_same:
+        return h, w, ref_angle + d_swap
+    return w, h, ref_angle + d_same
+
+
 def get_weighted_box(boxes, conf_type='avg'):
     """
     Create weighted box for set of rotated boxes
-    :param boxes: set of boxes to fuse
+    :param boxes: set of boxes to fuse. boxes[0] (the highest scoring one) is the reference
+        that all other boxes are aligned to before averaging.
     :param conf_type: type of confidence one of 'avg', 'max', 'box_and_model_avg', 'absent_model_aware_avg'
     :return: weighted box (label, score, weight, model index, cx, cy, w, h, angle)
     """
@@ -192,13 +218,15 @@ def get_weighted_box(boxes, conf_type='avg'):
     conf = 0
     conf_list = []
     w = 0
-    sum_cos = 0.0
-    sum_sin = 0.0
+    ref_w, ref_h, ref_angle = boxes[0][6], boxes[0][7], boxes[0][8]
+    sum_cx = sum_cy = sum_w = sum_h = sum_angle = 0.0
     for b in boxes:
-        box[4:8] += (b[1] * b[4:8])
-        theta = np.radians(b[8])
-        sum_cos += b[1] * np.cos(2 * theta)
-        sum_sin += b[1] * np.sin(2 * theta)
+        bw, bh, bangle = align_to_reference(b[6], b[7], b[8], ref_w, ref_h, ref_angle)
+        sum_cx += b[1] * b[4]
+        sum_cy += b[1] * b[5]
+        sum_w += b[1] * bw
+        sum_h += b[1] * bh
+        sum_angle += b[1] * bangle
         conf += b[1]
         conf_list.append(b[1])
         w += b[2]
@@ -209,13 +237,11 @@ def get_weighted_box(boxes, conf_type='avg'):
         box[1] = np.array(conf_list).max()
     box[2] = w
     box[3] = -1  # model index field is retained for consistency but is not used.
-    box[4:8] /= conf
-
-    # Circular mean of angle (handles le90's 180-degree periodicity / wraparound)
-    fused_angle = np.degrees(np.arctan2(sum_sin, sum_cos)) / 2.0
-    if fused_angle >= 90:
-        fused_angle -= 180
-    box[8] = fused_angle
+    fused_w, fused_h, fused_angle = sum_w / conf, sum_h / conf, sum_angle / conf
+    # Back to le90: w is the long edge, angle in [-90, 90)
+    if fused_w < fused_h:
+        fused_w, fused_h, fused_angle = fused_h, fused_w, fused_angle + 90
+    box[4:9] = [sum_cx / conf, sum_cy / conf, fused_w, fused_h, wrap_angle(fused_angle)]
     return box
 
 
@@ -253,11 +279,19 @@ def weighted_boxes_fusion_rotated(
     (cx, cy, w, h, angle). It has 3 dimensions (models_number, model_preds, 5).
     cx, cy, w, h are float normalized coordinates [0; 1] relative to image width/height,
     matching the convention of the axis-aligned weighted_boxes_fusion.
-    angle is in DEGREES, using the le90 (long-edge 90) convention from MMRotate:
-    angle in [-90, 90), and w is always defined as the LONGER edge of the box (w >= h),
-    with angle describing the rotation of that long edge relative to the horizontal
-    x-axis. Boxes violating w >= h are auto-corrected (w/h swapped, angle rotated by
-    90 degrees and re-wrapped into [-90, 90)) during prefiltering.
+    angle is in DEGREES and uses the le90 (long-edge 90) layout: angle in [-90, 90),
+    and w is always the LONGER edge of the box (w >= h), with angle being the rotation of
+    that long edge from the +x axis towards the +y axis (clockwise on screen, as image y
+    points down). Results do not depend on the rotation direction as long as all inputs
+    use the same one. Boxes with w < h or angle outside [-90, 90) describe the same
+    rectangle and are normalized during prefiltering (w/h swapped and angle rotated by
+    90 degrees, angle wrapped modulo 180).
+    Other libraries use different units/ranges; convert before calling:
+        MMRotate 'le90' (radians): angle = np.degrees(angle)
+        Ultralytics YOLO OBB xywhr (radians): angle = np.degrees(r)
+        Detectron2 RotatedBoxes (degrees, counter-clockwise): pass as is
+        OpenCV minAreaRect (degrees): pass as is
+    and normalize cx, cy, w, h to [0; 1].
     :param scores_list: list of scores for each model
     :param labels_list: list of labels for each model
     :param weights: list of weights for each model. Default: None, which means weight == 1 for each model
@@ -274,9 +308,10 @@ def weighted_boxes_fusion_rotated(
     :return: scores: confidence scores
     :return: labels: boxes labels
 
-    NOTE: angle fusion uses circular (double-angle) averaging, not linear averaging,
-    to correctly handle le90's 180-degree periodicity and the +/-90 degree wraparound
-    boundary.
+    NOTE: before averaging, each box in a cluster is aligned to the highest scoring box:
+    its angle is unwrapped to within 90 degrees of the reference (handles the +/-90 degree
+    wraparound, e.g. -89 and 89 fuse to -90, not 0), and near-square boxes predicted ~90
+    degrees apart are re-expressed with w/h swapped so they fuse to their shared orientation.
     NOTE: rotated IoU is computed via polygon clipping (Sutherland-Hodgman) + shoelace
     area formula on the 4 corners of each rotated rectangle; no shapely/opencv
     dependency is required.
@@ -292,6 +327,10 @@ def weighted_boxes_fusion_rotated(
     if conf_type not in ['avg', 'max', 'box_and_model_avg', 'absent_model_aware_avg']:
         print('Unknown conf_type: {}. Must be "avg", "max" or "box_and_model_avg", or "absent_model_aware_avg"'.format(conf_type))
         exit()
+
+    angles = [float(b[4]) for model_boxes in boxes_list for b in model_boxes]
+    if any(a != 0 for a in angles) and max(abs(a) for a in angles) <= np.pi / 2:
+        warnings.warn('All angles are within [-pi/2, pi/2]. Angles must be in degrees, convert radians with np.degrees().')
 
     filtered_boxes = prefilter_boxes(boxes_list, scores_list, labels_list, weights, skip_box_thr)
     if len(filtered_boxes) == 0:
