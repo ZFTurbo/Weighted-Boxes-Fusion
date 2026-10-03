@@ -6,6 +6,10 @@ import warnings
 import numpy as np
 
 
+# Longest edge a rotated box can have in a normalized image: the diagonal
+MAX_EDGE = np.sqrt(2)
+
+
 def rotated_box_corners(cx, cy, w, h, angle_deg):
     """
     Compute the 4 corner vertices (CCW order) of a rotated rectangle.
@@ -142,15 +146,16 @@ def prefilter_boxes(boxes, scores, labels, weights, thr):
             if w < 0:
                 warnings.warn('W < 0 in box. Set it to 0.')
                 w = 0
-            if w > 1:
-                warnings.warn('W > 1 in box. Set it to 1. Check that you normalize boxes in [0, 1] range.')
-                w = 1
+            # A rotated box can be longer than the image side: up to the diagonal, sqrt(2)
+            if w > MAX_EDGE:
+                warnings.warn('W > sqrt(2) in box. Set it to sqrt(2). Check that you normalize boxes in [0, 1] range.')
+                w = MAX_EDGE
             if h < 0:
                 warnings.warn('H < 0 in box. Set it to 0.')
                 h = 0
-            if h > 1:
-                warnings.warn('H > 1 in box. Set it to 1. Check that you normalize boxes in [0, 1] range.')
-                h = 1
+            if h > MAX_EDGE:
+                warnings.warn('H > sqrt(2) in box. Set it to sqrt(2). Check that you normalize boxes in [0, 1] range.')
+                h = MAX_EDGE
             if w * h == 0.0:
                 warnings.warn("Zero area box skipped: {}.".format(box_part))
                 continue
@@ -328,10 +333,6 @@ def weighted_boxes_fusion_rotated(
     if conf_type not in ['avg', 'max', 'box_and_model_avg', 'absent_model_aware_avg']:
         print('Unknown conf_type: {}. Must be "avg", "max" or "box_and_model_avg", or "absent_model_aware_avg"'.format(conf_type))
         exit()
-
-    angles = [float(b[4]) for model_boxes in boxes_list for b in model_boxes]
-    if any(a != 0 for a in angles) and max(abs(a) for a in angles) <= np.pi / 2:
-        warnings.warn('All angles are within [-pi/2, pi/2]. Angles must be in degrees, convert radians with np.degrees().')
 
     filtered_boxes = prefilter_boxes(boxes_list, scores_list, labels_list, weights, skip_box_thr)
     if len(filtered_boxes) == 0:
