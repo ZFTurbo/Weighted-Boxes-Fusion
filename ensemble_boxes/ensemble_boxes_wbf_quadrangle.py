@@ -151,10 +151,31 @@ def get_weighted_box(boxes, conf_type='avg'):
 def find_matching_box(boxes_list, new_box, match_iou):
     """
     Scalar loop matching for quadrangles (polygon IoU does not vectorize cleanly).
+    To keep that loop short, quadrangles that cannot overlap are rejected first
+    with a vectorized check on their axis-aligned bounding rectangles.
     """
     best_iou = match_iou
     best_index = -1
-    for i in range(len(boxes_list)):
+    if len(boxes_list) == 0:
+        return best_index, best_iou
+
+    # Box layout: [label, score, weight, model index, x1, y1, x2, y2, x3, y3, x4, y4]
+
+    # x and y coordinates of the 4 vertices of every existing box and of the new box
+    xs = boxes_list[:, 4:12:2]
+    ys = boxes_list[:, 5:12:2]
+    new_xs = new_box[4:12:2]
+    new_ys = new_box[5:12:2]
+
+    # Each quadrangle lies fully inside its axis-aligned bounding rectangle
+    # (min/max of its vertices). If two such rectangles do not intersect, the
+    # quadrangles inside them cannot overlap, so IoU is 0 and the pair is skipped.
+    # Keep only indexes of boxes whose bounding rectangles intersect on both axes.
+    overlap_x = (xs.min(axis=1) < new_xs.max()) & (xs.max(axis=1) > new_xs.min())
+    overlap_y = (ys.min(axis=1) < new_ys.max()) & (ys.max(axis=1) > new_ys.min())
+    candidates = np.nonzero(overlap_x & overlap_y)[0]
+
+    for i in candidates:
         box = boxes_list[i]
         if box[0] != new_box[0]:
             continue
