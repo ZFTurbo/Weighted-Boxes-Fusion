@@ -248,13 +248,35 @@ def get_weighted_box(boxes, conf_type='avg'):
 
 def find_matching_box(boxes_list, new_box, match_iou):
     """
-    Scalar loop matching (analogous to the 3D WBF variant): rotated-rectangle
-    IoU is computed via polygon clipping and does not vectorize as cleanly as
-    the axis-aligned case, so this stays a per-pair loop.
+    Rotated-rectangle IoU is computed via polygon clipping and does not vectorize
+    as cleanly as the axis-aligned case, so it stays a per-pair loop. To keep that
+    loop short, boxes that cannot overlap are rejected first with a vectorized
+    check: two boxes are disjoint if their centers are further apart than the sum
+    of their half-diagonals.
     """
     best_iou = match_iou
     best_index = -1
-    for i in range(len(boxes_list)):
+    if len(boxes_list) == 0:
+        return best_index, best_iou
+
+    # Box layout: [label, score, weight, model index, cx, cy, w, h, angle]
+
+    # Offset between the center of the new box and the center of every existing box
+    dx = boxes_list[:, 4] - new_box[4]
+    dy = boxes_list[:, 5] - new_box[5]
+
+    # Radius of the circle drawn around each box through its 4 corners:
+    # half of the diagonal, sqrt(w^2 + h^2) / 2. The box lies fully inside this
+    # circle whatever its angle is.
+    radius = np.hypot(boxes_list[:, 6], boxes_list[:, 7]) / 2.0
+    new_radius = np.hypot(new_box[6], new_box[7]) / 2.0
+
+    # If two circles do not touch (distance between centers >= sum of radii), the
+    # boxes inside them cannot overlap, and the pair is skipped.
+    # Keep only indexes of boxes whose circles intersect.
+    candidates = np.nonzero(dx * dx + dy * dy < (radius + new_radius) ** 2)[0]
+
+    for i in candidates:
         box = boxes_list[i]
         if box[0] != new_box[0]:
             continue
