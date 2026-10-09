@@ -1,4 +1,5 @@
 wbf/
 *.egg-info/
 __pycache__/
-.pytest_cache/
+*.pytest_cache/
+*.DS_Store
