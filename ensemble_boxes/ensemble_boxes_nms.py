@@ -198,6 +198,10 @@ def nms_method(boxes, scores, labels, method=3, iou_thr=0.5, sigma=0.5, thresh=0
         filtered_scores.append(scores[i])
         filtered_labels.append(labels[i])
 
+    # No model has any box
+    if len(filtered_boxes) == 0:
+        return np.zeros((0, 4)), np.zeros((0,)), np.zeros((0,))
+
     # We concatenate everything
     boxes = np.concatenate(filtered_boxes)
     scores = np.concatenate(filtered_scores)
@@ -205,6 +209,10 @@ def nms_method(boxes, scores, labels, method=3, iou_thr=0.5, sigma=0.5, thresh=0
 
     # Fix coordinates and removed zero area boxes
     boxes, scores, labels = prepare_boxes(boxes, scores, labels)
+
+    # All boxes had zero area
+    if len(boxes) == 0:
+        return np.zeros((0, 4)), np.zeros((0,)), np.zeros((0,))
 
     # Run NMS independently for each label
     unique_labels = np.unique(labels)

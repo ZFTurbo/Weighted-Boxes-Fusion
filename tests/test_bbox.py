@@ -324,6 +324,32 @@ class TestWBF(unittest.TestCase):
             thresh=0.001
         )
 
+    def test_no_boxes_nms(self):
+        # no model found anything on the image
+        for method in [1, 2, 3]:
+            boxes, scores, labels = nms_method(
+                [[], []],
+                [[], []],
+                [[], []],
+                method=method,
+                weights=[2, 1],
+            )
+            self.assertEqual(boxes.shape, (0, 4))
+            self.assertEqual(len(scores), 0)
+            self.assertEqual(len(labels), 0)
+
+        boxes, scores, labels = nms([[], []], [[], []], [[], []])
+        self.assertEqual(boxes.shape, (0, 4))
+        boxes, scores, labels = soft_nms([[], []], [[], []], [[], []])
+        self.assertEqual(boxes.shape, (0, 4))
+
+    def test_only_zero_area_boxes_nms(self):
+        # the only box is a vertical line, it is removed before NMS
+        boxes, scores, labels = nms([[[0.2, 0.2, 0.2, 0.5]]], [[0.9]], [[1]])
+        self.assertEqual(boxes.shape, (0, 4))
+        self.assertEqual(len(scores), 0)
+        self.assertEqual(len(labels), 0)
+        
     def test_nms_weights_do_not_change_input_scores(self):
         boxes_list = [[[0.1, 0.1, 0.4, 0.4]], [[0.5, 0.5, 0.8, 0.8]]]
         scores_list = [[0.9], [0.8]]
