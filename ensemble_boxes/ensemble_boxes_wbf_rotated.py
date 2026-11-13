@@ -33,14 +33,11 @@ def polygon_clip(subject_polygon, clip_polygon):
     convex polygon `clip_polygon`. Both polygons must be given in CCW order.
     :return: list of (x, y) points of the clipped polygon (possibly empty)
     """
-    def cross(o, a, b):
-        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
-
-    def line_intersection(a, b, p, q):
+    def line_intersection(p, q):
         # Intersection of infinite line AB with segment PQ
-        a1 = b[1] - a[1]
-        b1 = a[0] - b[0]
-        c1 = a1 * a[0] + b1 * a[1]
+        a1 = edge_dy
+        b1 = ax - B[0]
+        c1 = a1 * ax + b1 * ay
         a2 = q[1] - p[1]
         b2 = p[0] - q[0]
         c2 = a2 * p[0] + b2 * p[1]
@@ -58,20 +55,31 @@ def polygon_clip(subject_polygon, clip_polygon):
             return []
         A = clip_polygon[i]
         B = clip_polygon[(i + 1) % n]
+        ax = A[0]
+        ay = A[1]
+        edge_dx = B[0] - ax
+        edge_dy = B[1] - ay
         input_list = output
         output = []
-        m = len(input_list)
-        for j in range(m):
-            P = input_list[j]
-            Q = input_list[(j + 1) % m]
-            p_inside = cross(A, B, P) >= 0
-            q_inside = cross(A, B, Q) >= 0
+        first = P = input_list[0]
+        first_inside = p_inside = None
+        input_list.append(first)
+        for Q in input_list:
+            if Q is first and first_inside is not None:
+                q_inside = first_inside
+            else:
+                q_inside = edge_dx * (Q[1] - ay) - edge_dy * (Q[0] - ax) >= 0
+            if p_inside is None:
+                first_inside = p_inside = q_inside
+                continue
             if q_inside:
                 if not p_inside:
-                    output.append(line_intersection(A, B, P, Q))
+                    output.append(line_intersection(P, Q))
                 output.append(Q)
             elif p_inside:
-                output.append(line_intersection(A, B, P, Q))
+                output.append(line_intersection(P, Q))
+            P = Q
+            p_inside = q_inside
     return output
 
 
