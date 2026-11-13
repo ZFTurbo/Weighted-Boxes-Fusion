@@ -180,8 +180,8 @@ def nms_method(boxes, scores, labels, method=3, iou_thr=0.5, sigma=0.5, thresh=0
             print('Incorrect number of weights: {}. Must be: {}. Skip it'.format(len(weights), len(boxes)))
         else:
             weights = np.array(weights)
-            for i in range(len(weights)):
-                scores[i] = (np.array(scores[i]) * weights[i]) / weights.sum()
+            # Scale copies, the caller's lists must stay as they are
+            scores = [(np.array(scores[i]) * weights[i]) / weights.sum() for i in range(len(weights))]
 
     # Do the checks and skip empty predictions
     filtered_boxes = []
