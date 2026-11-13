@@ -89,22 +89,26 @@ def get_weighted_box(boxes, conf_type='avg'):
     """
 
     box = np.zeros(8, dtype=np.float32)
+    coords = box[4:]
     conf = 0
-    conf_list = []
     w = 0
+    use_max = conf_type == 'max'
+    conf_list = [] if use_max else None
     for b in boxes:
-        box[4:] += (b[1] * b[4:])
-        conf += b[1]
-        conf_list.append(b[1])
+        score = b[1]
+        coords += score * b[4:]
+        conf += score
+        if use_max:
+            conf_list.append(score)
         w += b[2]
     box[0] = boxes[0][0]
     if conf_type in ('avg', 'box_and_model_avg', 'absent_model_aware_avg'):
         box[1] = conf / len(boxes)
-    elif conf_type == 'max':
-        box[1] = np.array(conf_list).max()
+    elif use_max:
+        box[1] = np.maximum.reduce(conf_list)
     box[2] = w
     box[3] = -1 # model index field is retained for consistency but is not used.
-    box[4:] /= conf
+    coords /= conf
     return box
 
 
