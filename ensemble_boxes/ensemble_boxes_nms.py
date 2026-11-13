@@ -49,7 +49,7 @@ def cpu_soft_nms_float(dets, sc, Nt, sigma, thresh, method):
     :param sigma:  
     :param thresh: 
     :param method: 1 - linear soft-NMS, 2 - gaussian soft-NMS, 3 - standard NMS
-    :return: index of boxes to keep
+    :return: index of boxes to keep and their scores after the soft-NMS decay
     """
 
     # indexes concatenate boxes with the last column
@@ -116,9 +116,9 @@ def cpu_soft_nms_float(dets, sc, Nt, sigma, thresh, method):
         scores[pos:] = weight * scores[pos:]
 
     # select the boxes and keep the corresponding indexes
-    inds = dets[:, 4][scores > thresh]
-    keep = inds.astype(int)
-    return keep
+    cond = scores > thresh
+    keep = dets[:, 4][cond].astype(int)
+    return keep, scores[cond]
 
 
 @jit(nopython=True)
@@ -218,13 +218,15 @@ def nms_method(boxes, scores, labels, method=3, iou_thr=0.5, sigma=0.5, thresh=0
         labels_by_label = np.array([l] * len(boxes_by_label))
 
         if method != 3:
-            keep = cpu_soft_nms_float(boxes_by_label.copy(), scores_by_label.copy(), Nt=iou_thr, sigma=sigma, thresh=thresh, method=method)
+            # Soft-NMS lowers the scores of overlapping boxes, return the lowered scores
+            keep, kept_scores = cpu_soft_nms_float(boxes_by_label.copy(), scores_by_label.copy(), Nt=iou_thr, sigma=sigma, thresh=thresh, method=method)
         else:
             # Use faster function
             keep = nms_float_fast(boxes_by_label, scores_by_label, thresh=iou_thr)
+            kept_scores = scores_by_label[keep]
 
         final_boxes.append(boxes_by_label[keep])
-        final_scores.append(scores_by_label[keep])
+        final_scores.append(kept_scores)
         final_labels.append(labels_by_label[keep])
     final_boxes = np.concatenate(final_boxes)
     final_scores = np.concatenate(final_scores)
