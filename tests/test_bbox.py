@@ -324,6 +324,29 @@ class TestWBF(unittest.TestCase):
             thresh=0.001
         )
 
+    def test_soft_nms_returns_decayed_scores(self):
+        # IoU of the two boxes is 0.084 / 0.096 = 0.875
+        boxes_list = [[[0.1, 0.1, 0.4, 0.4], [0.12, 0.1, 0.42, 0.4]]]
+        scores_list = [[0.9, 0.8]]
+        labels_list = [[1, 1]]
+        iou = 0.875
+
+        # linear: the lower box is multiplied by (1 - IoU) because IoU > iou_thr
+        boxes, scores, labels = soft_nms(boxes_list, scores_list, labels_list, method=1, iou_thr=0.5)
+        np.testing.assert_allclose(scores, [0.9, 0.8 * (1 - iou)])
+        np.testing.assert_allclose(boxes, boxes_list[0])
+
+        # gaussian: the lower box is multiplied by exp(-IoU^2 / sigma)
+        boxes, scores, labels = soft_nms(boxes_list, scores_list, labels_list, method=2, sigma=0.5)
+        np.testing.assert_allclose(scores, [0.9, 0.8 * np.exp(-iou * iou / 0.5)])
+        np.testing.assert_allclose(boxes, boxes_list[0])
+
+        # boxes that do not overlap keep their scores
+        boxes, scores, labels = soft_nms(
+            [[[0.1, 0.1, 0.2, 0.2], [0.5, 0.5, 0.8, 0.8]]], [[0.9, 0.8]], [[1, 1]], method=2, sigma=0.5
+        )
+        np.testing.assert_allclose(scores, [0.9, 0.8])
+
 
 if __name__ == "__main__":
     unittest.main()
