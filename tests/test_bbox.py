@@ -324,6 +324,19 @@ class TestWBF(unittest.TestCase):
             thresh=0.001
         )
 
+    def test_nms_weights_do_not_change_input_scores(self):
+        boxes_list = [[[0.1, 0.1, 0.4, 0.4]], [[0.5, 0.5, 0.8, 0.8]]]
+        scores_list = [[0.9], [0.8]]
+        labels_list = [[1], [1]]
+        weights = [1, 3]
+
+        _, first_scores, _ = nms(boxes_list, scores_list, labels_list, weights=weights)
+        _, second_scores, _ = nms(boxes_list, scores_list, labels_list, weights=weights)
+
+        self.assertEqual(scores_list, [[0.9], [0.8]])
+        np.testing.assert_allclose(first_scores, [0.6, 0.225])
+        np.testing.assert_allclose(second_scores, first_scores)
+        
     def test_soft_nms_returns_decayed_scores(self):
         # IoU of the two boxes is 0.084 / 0.096 = 0.875
         boxes_list = [[[0.1, 0.1, 0.4, 0.4], [0.12, 0.1, 0.42, 0.4]]]
