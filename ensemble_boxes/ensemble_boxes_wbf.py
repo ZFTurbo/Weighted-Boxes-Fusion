@@ -4,6 +4,7 @@ __author__ = 'ZFTurbo: https://kaggle.com/zfturbo'
 
 import warnings
 import numpy as np
+from numba import njit
 
 
 def prefilter_boxes(boxes, scores, labels, weights, thr):
@@ -117,35 +118,63 @@ def find_matching_box_fast(boxes_list, new_box, match_iou):
         Reimplementation of find_matching_box with numpy instead of loops. Gives significant speed up for larger arrays
         (~100x). This was previously the bottleneck since the function is called for every entry in the array.
     """
-    def bb_iou_array(boxes, new_box):
-        # bb interesection over union
-        xA = np.maximum(boxes[:, 0], new_box[0])
-        yA = np.maximum(boxes[:, 1], new_box[1])
-        xB = np.minimum(boxes[:, 2], new_box[2])
-        yB = np.minimum(boxes[:, 3], new_box[3])
-
-        interArea = np.maximum(xB - xA, 0) * np.maximum(yB - yA, 0)
-
-        # compute the area of both the prediction and ground-truth rectangles
-        boxAArea = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
-        boxBArea = (new_box[2] - new_box[0]) * (new_box[3] - new_box[1])
-
-        iou = interArea / (boxAArea + boxBArea - interArea)
-
-        return iou
-
     if boxes_list.shape[0] == 0:
         return -1, match_iou
 
-    # boxes = np.array(boxes_list)
     boxes = boxes_list
+    native = (type(boxes) is np.ndarray and type(new_box) is np.ndarray
+              and boxes.dtype == np.float64 and new_box.dtype == np.float64
+              and boxes.ndim == 2 and new_box.ndim == 1
+              and boxes.shape[1] == 8 and new_box.shape[0] == 8)
+    matching_box = getattr(find_matching_box_fast, '_matching_box', None) if native else None
+    if matching_box is None:
+        def iou(x1, y1, x2, y2, new_box, new_area, scalar=False):
+            xA = np.maximum(x1, new_box[0])
+            yA = np.maximum(y1, new_box[1])
+            xB = np.minimum(x2, new_box[2])
+            yB = np.minimum(y2, new_box[3])
+            intersection = np.maximum(xB - xA, 0) * np.maximum(yB - yA, 0)
+            area = (x2 - x1) * (y2 - y1)
+            union = area + new_area - intersection
+            if scalar and intersection == 0 and union > 0:
+                return 0.0
+            return intersection / union
 
-    ious = bb_iou_array(boxes[:, 4:], new_box[4:])
+        if native:
+            scalar_iou = njit(iou, error_model='numpy', inline='always')
 
-    ious[boxes[:, 0] != new_box[0]] = -1
+            @njit(error_model='numpy')
+            def matching_box(boxes, new_box):
+                best_idx = 0
+                best_iou = -np.inf
+                new_area = (new_box[6] - new_box[4]) * (new_box[7] - new_box[5])
+                coordinates = new_box[4:]
+                for index in range(len(boxes)):
+                    value = -1.0
+                    if boxes[index, 0] == new_box[0]:
+                        value = scalar_iou(boxes[index, 4], boxes[index, 5],
+                                           boxes[index, 6], boxes[index, 7], coordinates, new_area, True)
+                    if np.isnan(value):
+                        return index, value
+                    if value > best_iou:
+                        best_idx = index
+                        best_iou = value
+                return best_idx, best_iou
 
-    best_idx = np.argmax(ious)
-    best_iou = ious[best_idx]
+            find_matching_box_fast._matching_box = matching_box
+        else:
+            coordinates = boxes[:, 4:]
+            new_coordinates = new_box[4:]
+            x1, y1 = coordinates[:, 0], coordinates[:, 1]
+            x2, y2 = coordinates[:, 2], coordinates[:, 3]
+            new_area = (new_coordinates[2] - new_coordinates[0]) * (new_coordinates[3] - new_coordinates[1])
+            ious = iou(x1, y1, x2, y2, new_coordinates, new_area)
+            ious[boxes[:, 0] != new_box[0]] = -1
+            best_idx = np.argmax(ious)
+            best_iou = ious[best_idx]
+
+    if native:
+        best_idx, best_iou = matching_box(boxes, new_box)
 
     if best_iou <= match_iou:
         best_iou = match_iou
