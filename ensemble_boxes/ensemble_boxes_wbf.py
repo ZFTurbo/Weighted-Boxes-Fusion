@@ -175,6 +175,7 @@ def find_matching_box_fast(boxes_list, new_box, match_iou):
 
     if native:
         best_idx, best_iou = matching_box(boxes, new_box)
+        best_iou = np.float64(best_iou)
 
     if best_iou <= match_iou:
         best_iou = match_iou
