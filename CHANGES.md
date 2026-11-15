@@ -1,7 +1,7 @@
 # Release notes
 All notable changes to this project will be documented in this file.
 
-## Changes since v1.0.9
+## v1.0.11
 
 ### Added
 
@@ -21,6 +21,9 @@ All notable changes to this project will be documented in this file.
 - Skip polygon clipping for rotated and quadrangle boxes that cannot overlap. Rotated WBF checks circumscribed circles, and quadrangle WBF checks axis-aligned bounds. [#71](https://github.com/ZFTurbo/Weighted-Boxes-Fusion/pull/71)
 - Speed up polygon clipping shared by rotated and quadrangle WBF by reusing vertex inside tests and clip-edge differences. [#74](https://github.com/ZFTurbo/Weighted-Boxes-Fusion/pull/74)
 - Reduce repeated array access and temporary allocations when updating axis-aligned WBF clusters. Confidence scores are collected only in `max` mode. [#75](https://github.com/ZFTurbo/Weighted-Boxes-Fusion/pull/75)
+- Reduce temporary allocations in Soft-NMS by reusing array buffers and selecting the next box in a single score scan. [#79](https://github.com/ZFTurbo/Weighted-Boxes-Fusion/pull/79)
+- Speed up axis-aligned WBF box matching with a Numba-compiled IoU scan. The first use of the scan incurs JIT compilation. [#80](https://github.com/ZFTurbo/Weighted-Boxes-Fusion/pull/80)
+- Speed up vertex ordering in quadrangle WBF by computing the centroid in one reduction and avoiding redundant sorting and rotation. [#81](https://github.com/ZFTurbo/Weighted-Boxes-Fusion/pull/81)
 
 ### Documentation and development
 
