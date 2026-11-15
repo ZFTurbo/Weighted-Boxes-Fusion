@@ -55,7 +55,7 @@ def cpu_soft_nms_float(dets, sc, Nt, sigma, thresh, method):
     # indexes concatenate boxes with the last column
     N = dets.shape[0]
     indexes = np.array([np.arange(N)])
-    dets = np.concatenate((dets, indexes.T), axis=1)
+    dets = np.asfortranarray(np.concatenate((dets, indexes.T), axis=1))
 
     # the order of boxes coordinate is [y1, x1, y2, x2]
     y1 = dets[:, 1]
@@ -65,52 +65,83 @@ def cpu_soft_nms_float(dets, sc, Nt, sigma, thresh, method):
     scores = sc
     areas = (x2 - x1) * (y2 - y1)
 
+    reuse = np.issubdtype(areas.dtype, np.inexact)
+    overlap = np.empty_like(areas) if reuse else None
+    height = np.empty_like(areas) if reuse else None
+    scratch = np.empty_like(areas) if reuse else None
+
+    weight_buffer = np.ones(N) if method != 2 else None
+
+    # Resolve array operations once for the shrinking-suffix loop.
+    maximum = np.maximum
+    minimum = np.minimum
+    subtract = np.subtract
+    multiply = np.multiply
+    add = np.add
+    divide = np.divide
+    negative = np.negative
+    exp = np.exp
+    argmax = np.argmax
+
+    swap_row = np.empty(dets.shape[1], dtype=dets.dtype)
+
     for i in range(N):
         # intermediate parameters for later parameters exchange
-        tBD = dets[i, :].copy()
-        tscore = scores[i].copy()
-        tarea = areas[i].copy()
+        tscore = scores[i]
         pos = i + 1
 
         #
         if i != N - 1:
-            maxscore = np.max(scores[pos:], axis=0)
-            maxpos = np.argmax(scores[pos:], axis=0)
+            maxpos = argmax(scores[pos:], axis=0)
+            maxscore = scores[pos + maxpos]
         else:
             maxscore = scores[-1]
             maxpos = 0
         if tscore < maxscore:
-            dets[i, :] = dets[maxpos + i + 1, :]
-            dets[maxpos + i + 1, :] = tBD
-            tBD = dets[i, :]
-
-            scores[i] = scores[maxpos + i + 1]
-            scores[maxpos + i + 1] = tscore
-            tscore = scores[i]
-
-            areas[i] = areas[maxpos + i + 1]
-            areas[maxpos + i + 1] = tarea
+            swap_row[:] = dets[i, :]
+            swap_pos = pos + maxpos
             tarea = areas[i]
+            dets[i, :] = dets[swap_pos, :]
+            dets[swap_pos, :] = swap_row
+
+            scores[i] = scores[swap_pos]
+            scores[swap_pos] = tscore
+
+            areas[i] = areas[swap_pos]
+            areas[swap_pos] = tarea
 
         # IoU calculate
-        xx1 = np.maximum(dets[i, 1], dets[pos:, 1])
-        yy1 = np.maximum(dets[i, 0], dets[pos:, 0])
-        xx2 = np.minimum(dets[i, 3], dets[pos:, 3])
-        yy2 = np.minimum(dets[i, 2], dets[pos:, 2])
-
-        w = np.maximum(0.0, xx2 - xx1)
-        h = np.maximum(0.0, yy2 - yy1)
-        inter = w * h
-        ovr = inter / (areas[i] + areas[pos:] - inter)
+        # Reuse contiguous buffers for each shrinking suffix.
+        ovr = overlap[pos:] if reuse else None
+        h = height[pos:] if reuse else None
+        work = scratch[pos:] if reuse else None
+        work = maximum(dets[i, 1], dets[pos:, 1], out=work if reuse else None)
+        ovr = minimum(dets[i, 3], dets[pos:, 3], out=ovr if reuse else None)
+        ovr = subtract(ovr, work, out=ovr if reuse else None)
+        ovr = maximum(0.0, ovr, out=ovr if reuse else None)
+        work = maximum(dets[i, 0], dets[pos:, 0], out=work if reuse else None)
+        h = minimum(dets[i, 2], dets[pos:, 2], out=h if reuse else None)
+        h = subtract(h, work, out=h if reuse else None)
+        h = maximum(0.0, h, out=h if reuse else None)
+        ovr = multiply(ovr, h, out=ovr if reuse else None)
+        work = add(areas[i], areas[pos:], out=work if reuse else None)
+        work = subtract(work, ovr, out=work if reuse else None)
+        ovr = divide(ovr, work, out=ovr if reuse else None)
 
         # Three methods: 1.linear 2.gaussian 3.original NMS
         if method == 1:  # linear
-            weight = np.ones(ovr.shape)
-            weight[ovr > Nt] = weight[ovr > Nt] - ovr[ovr > Nt]
+            weight = weight_buffer[pos:]
+            weight.fill(1.0)
+            mask = ovr > Nt
+            weight[mask] = 1.0 - ovr[mask]
         elif method == 2:  # gaussian
-            weight = np.exp(-(ovr * ovr) / sigma)
+            multiply(ovr, ovr, out=ovr)
+            negative(ovr, out=ovr)
+            weight = ovr / sigma
+            exp(weight, out=weight)
         else:  # original NMS
-            weight = np.ones(ovr.shape)
+            weight = weight_buffer[pos:]
+            weight.fill(1.0)
             weight[ovr > Nt] = 0
 
         scores[pos:] = weight * scores[pos:]
