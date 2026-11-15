@@ -18,14 +18,15 @@ def order_quadrangle(pts):
     :return: (4, 2) numpy array of ordered vertices
     """
     pts = np.asarray(pts, dtype=float).reshape(4, 2)
-    cx = pts[:, 0].mean()
-    cy = pts[:, 1].mean()
+    offsets = (pts - np.add.reduce(pts, axis=0) * 0.25).T
     # Sort vertices counterclockwise by their angle around the centroid.
-    angles = np.arctan2(pts[:, 1] - cy, pts[:, 0] - cx)
-    pts = pts[np.argsort(angles)]
+    angles = np.arctan2(offsets[1], offsets[0])
+    pts = pts[angles.argsort()]
     # Rotate the ordering so the top-left-most vertex (min y, then min x) comes first.
-    start = np.lexsort((pts[:, 0], pts[:, 1]))[0]
-    pts = np.roll(pts, -start, axis=0)
+    ys = pts.T[1]
+    start = 0 if ys[0] < ys[1] and ys[0] < ys[2] and ys[0] < ys[3] else np.lexsort(pts.T)[0]
+    if start:
+        pts = pts.take(((0, 1, 2, 3), (1, 2, 3, 0), (2, 3, 0, 1), (3, 0, 1, 2))[start], axis=0)
     return pts
 
 
